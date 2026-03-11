@@ -10,8 +10,8 @@ _fzf_asset() {
   # Release assets use the version without the leading "v"
   local version="${1#v}"
   case "${OS}-${ARCH}" in
-    macos-arm64)   echo "fzf-${version}-darwin_arm64.zip"    ;;
-    macos-x86_64)  echo "fzf-${version}-darwin_amd64.zip"    ;;
+    macos-arm64)   echo "fzf-${version}-darwin_arm64.tar.gz"  ;;
+    macos-x86_64)  echo "fzf-${version}-darwin_amd64.tar.gz" ;;
     linux-x86_64)  echo "fzf-${version}-linux_amd64.tar.gz"  ;;
     linux-arm64)   echo "fzf-${version}-linux_arm64.tar.gz"  ;;
     *) error "Unsupported platform: ${OS}-${ARCH}"; return 1 ;;
