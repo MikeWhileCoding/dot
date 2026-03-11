@@ -2,6 +2,8 @@
 
 A portable dotfiles CLI written in pure zsh. Installs developer tools to `~/.local` without sudo, on both macOS and Linux.
 
+_Note: this project is vibe-coded and may include errors. The intention for it being public is not to explicitly make it usefull for others, some configuration might be very specific to my instance_
+
 ## Requirements
 
 - `zsh`
