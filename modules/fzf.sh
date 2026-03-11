@@ -7,7 +7,8 @@ MODULE_DESC="fzf — fuzzy finder for shell history, files, and directories"
 _fzf_repo="junegunn/fzf"
 
 _fzf_asset() {
-  local version="$1"
+  # Release assets use the version without the leading "v"
+  local version="${1#v}"
   case "${OS}-${ARCH}" in
     macos-arm64)   echo "fzf-${version}-darwin_arm64.zip"    ;;
     macos-x86_64)  echo "fzf-${version}-darwin_amd64.zip"    ;;
