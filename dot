@@ -1,0 +1,137 @@
+#!/usr/bin/env zsh
+# dot — personal dotfiles CLI
+set -euo pipefail
+
+# ── Resolve repo root relative to this script ─────────────────────────
+DOT_REPO="${0:A:h}"
+
+# ── Load core library ─────────────────────────────────────────────────
+source "${DOT_REPO}/lib/core.sh"
+
+# ── Module helpers ─────────────────────────────────────────────────────
+
+_load_module() {
+  local name="$1"
+  local mod_file="${DOT_REPO}/modules/${name}.sh"
+  if [[ ! -f "$mod_file" ]]; then
+    error "Module not found: ${name}"
+    return 1
+  fi
+  source "$mod_file"
+}
+
+_load_profile() {
+  local name="$1"
+  local prof_file="${DOT_REPO}/profiles/${name}.sh"
+  if [[ ! -f "$prof_file" ]]; then
+    error "Profile not found: ${name}"
+    return 1
+  fi
+  source "$prof_file"
+}
+
+_list_modules() {
+  for f in "${DOT_REPO}"/modules/*.sh(N); do
+    local saved_name="" saved_desc=""
+    (
+      source "$f"
+      printf "  %-14s %s\n" "$MODULE_NAME" "$MODULE_DESC"
+    )
+  done
+}
+
+_list_profiles() {
+  for f in "${DOT_REPO}"/profiles/*.sh(N); do
+    (
+      source "${DOT_REPO}/lib/core.sh"
+      source "$f"
+      printf "  %-14s %s  [%s]\n" "$PROFILE_NAME" "$PROFILE_DESC" "${PROFILE_MODULES[*]}"
+    )
+  done
+}
+
+# ── Commands ───────────────────────────────────────────────────────────
+
+cmd_install() {
+  if [[ "${1:-}" == "--profile" ]]; then
+    local profile_name="${2:?Usage: dot install --profile <name>}"
+    _load_profile "$profile_name"
+    header "Installing profile: ${PROFILE_NAME}"
+    for mod in "${PROFILE_MODULES[@]}"; do
+      _load_module "$mod"
+      header "Installing module: ${mod}"
+      module_install
+    done
+    if typeset -f profile_post_install > /dev/null; then
+      profile_post_install
+    fi
+  else
+    local mod_name="${1:?Usage: dot install <module>}"
+    _load_module "$mod_name"
+    header "Installing module: ${mod_name}"
+    module_install
+  fi
+}
+
+cmd_update() {
+  local target="${1:-all}"
+
+  if [[ "$target" == "all" ]]; then
+    header "Updating all modules"
+    for f in "${DOT_REPO}"/modules/*.sh(N); do
+      source "$f"
+      header "Updating: ${MODULE_NAME}"
+      module_update
+    done
+  else
+    _load_module "$target"
+    header "Updating: ${target}"
+    module_update
+  fi
+}
+
+cmd_status() {
+  local target="${1:-}"
+
+  if [[ -n "$target" ]]; then
+    _load_module "$target"
+    module_status
+  else
+    header "Status — all modules"
+    for f in "${DOT_REPO}"/modules/*.sh(N); do
+      source "$f"
+      module_status
+      echo
+    done
+  fi
+}
+
+cmd_list() {
+  header "Modules"
+  _list_modules
+  header "Profiles"
+  _list_profiles
+}
+
+cmd_help() {
+  cat <<'USAGE'
+Usage: dot <command> [args]
+
+Commands:
+  install <module>              Install a single module
+  install --profile <name>      Install all modules in a profile
+  update [<module>|all]         Update one module or everything
+  status [<module>]             Show installed version / stamp
+  list                          List all modules and profiles
+  help                          Show this help message
+USAGE
+}
+
+# ── Dispatch ───────────────────────────────────────────────────────────
+case "${1:-help}" in
+  install) shift; cmd_install "$@" ;;
+  update)  shift; cmd_update  "$@" ;;
+  status)  shift; cmd_status  "$@" ;;
+  list)    cmd_list              ;;
+  help|*)  cmd_help              ;;
+esac
