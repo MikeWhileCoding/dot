@@ -34,7 +34,7 @@ _tmux_ensure_libevent() {
 
   (
     cd "${tmpdir}/libevent" || return 1
-    ./configure --prefix="${DOT_PREFIX}" --disable-shared --enable-static 2>&1 | tail -1
+    ./configure --prefix="${DOT_PREFIX}" --disable-shared --enable-static --disable-openssl 2>&1 | tail -1
     make -j"$(_tmux_nproc)" 2>&1 | tail -1
     make install 2>&1 | tail -1
   ) || { error "libevent build failed"; return 1; }
