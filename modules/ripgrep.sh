@@ -7,33 +7,26 @@ MODULE_DESC="ripgrep — fast recursive search that respects .gitignore"
 _rg_repo="BurntSushi/ripgrep"
 
 _rg_asset() {
+  local version="$1"
   case "${OS}-${ARCH}" in
-    macos-arm64)   echo "ripgrep-VERSION-aarch64-apple-darwin.tar.gz"       ;;
-    macos-x86_64)  echo "ripgrep-VERSION-x86_64-apple-darwin.tar.gz"        ;;
-    linux-x86_64)  echo "ripgrep-VERSION-x86_64-unknown-linux-musl.tar.gz"  ;;
-    linux-arm64)   echo "ripgrep-VERSION-aarch64-unknown-linux-gnu.tar.gz"  ;;
+    macos-arm64)   echo "ripgrep-${version}-aarch64-apple-darwin.tar.gz"       ;;
+    macos-x86_64)  echo "ripgrep-${version}-x86_64-apple-darwin.tar.gz"        ;;
+    linux-x86_64)  echo "ripgrep-${version}-x86_64-unknown-linux-musl.tar.gz"  ;;
+    linux-arm64)   echo "ripgrep-${version}-aarch64-unknown-linux-gnu.tar.gz"  ;;
     *) error "Unsupported platform: ${OS}-${ARCH}"; return 1 ;;
   esac
 }
 
-_rg_latest_version() {
-  curl -fsSL -o /dev/null -w '%{url_effective}' \
-    "https://github.com/${_rg_repo}/releases/latest" \
-    | sed 's|.*/||'
-}
-
 _rg_url() {
-  local version asset
-  version="$(_rg_latest_version)" || return 1
-  asset="$(_rg_asset)" || return 1
-  asset="${asset//VERSION/${version}}"
+  local version="$1" asset
+  asset="$(_rg_asset "$version")" || return 1
   echo "https://github.com/${_rg_repo}/releases/download/${version}/${asset}"
 }
 
 _rg_install_from_release() {
-  local url version tmpdir
-  version="$(_rg_latest_version)" || return 1
-  url="$(_rg_url)" || return 1
+  local version url tmpdir
+  version="$(github_latest_version "$_rg_repo")" || return 1
+  url="$(_rg_url "$version")" || return 1
   tmpdir="$(mktemp -d)"
 
   info "Downloading ripgrep ${version}..."
@@ -46,19 +39,16 @@ _rg_install_from_release() {
   cp "${tmpdir}/out/rg" "${DOT_BIN}/rg"
   chmod +x "${DOT_BIN}/rg"
 
-  # Install man page if present
+  # Install man page and shell completions if present
   if [[ -f "${tmpdir}/out/doc/rg.1" ]]; then
     mkdir -p "${HOME}/.local/share/man/man1"
     cp "${tmpdir}/out/doc/rg.1" "${HOME}/.local/share/man/man1/"
   fi
-
-  # Install shell completions if present
   if [[ -f "${tmpdir}/out/complete/_rg" ]]; then
     mkdir -p "${HOME}/.local/share/zsh/site-functions"
     cp "${tmpdir}/out/complete/_rg" "${HOME}/.local/share/zsh/site-functions/"
   fi
 
-  # Write etag stamp
   local etag
   etag="$(remote_etag "$url")"
   [[ -n "$etag" ]] && write_stamp "$MODULE_NAME" "$etag"
@@ -76,8 +66,9 @@ module_install() {
 }
 
 module_update() {
-  local url
-  url="$(_rg_url)" || return 1
+  local version url
+  version="$(github_latest_version "$_rg_repo")" || return 1
+  url="$(_rg_url "$version")" || return 1
 
   if needs_update "$MODULE_NAME" "$url" "${DOT_BIN}/rg"; then
     info "Update available for ripgrep"

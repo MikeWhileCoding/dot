@@ -6,12 +6,6 @@ MODULE_DESC="tmux — terminal multiplexer with persistent sessions"
 
 _tmux_repo="tmux/tmux"
 
-_tmux_latest_version() {
-  curl -fsSL -o /dev/null -w '%{url_effective}' \
-    "https://github.com/${_tmux_repo}/releases/latest" \
-    | sed 's|.*/||'
-}
-
 _tmux_build_from_source() {
   local version="$1" tmpdir
   tmpdir="$(mktemp -d)"
@@ -49,7 +43,7 @@ _tmux_install_binary() {
   fi
 
   local version
-  version="$(_tmux_latest_version)" || return 1
+  version="$(github_latest_version "$_tmux_repo")" || return 1
 
   if [[ "$OS" == "macos" ]]; then
     # Build from source — no Homebrew/admin required
@@ -94,7 +88,7 @@ _tmux_deploy_config() {
   info "Linked tmux.conf → ${config_dst}"
 
   # Reload config if tmux is running
-  if tmux list-sessions &>/dev/null 2>&1; then
+  if tmux list-sessions &>/dev/null; then
     tmux source-file "$config_dst" 2>/dev/null && info "Reloaded tmux config"
   fi
 }
@@ -133,7 +127,7 @@ module_update() {
   if [[ "$tmux_path" == "${DOT_BIN}/tmux" ]]; then
     local current latest
     current="$("$tmux_path" -V 2>/dev/null | awk '{print $2}')"
-    latest="$(_tmux_latest_version)"
+    latest="$(github_latest_version "$_tmux_repo")" || return 1
     if [[ "$current" != "$latest" ]]; then
       info "Updating tmux ${current} → ${latest}"
       _tmux_build_from_source "$latest"

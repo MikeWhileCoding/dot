@@ -7,33 +7,26 @@ MODULE_DESC="fzf — fuzzy finder for shell history, files, and directories"
 _fzf_repo="junegunn/fzf"
 
 _fzf_asset() {
+  local version="$1"
   case "${OS}-${ARCH}" in
-    macos-arm64)   echo "fzf-VERSION-darwin_arm64.zip"    ;;
-    macos-x86_64)  echo "fzf-VERSION-darwin_amd64.zip"    ;;
-    linux-x86_64)  echo "fzf-VERSION-linux_amd64.tar.gz"  ;;
-    linux-arm64)   echo "fzf-VERSION-linux_arm64.tar.gz"  ;;
+    macos-arm64)   echo "fzf-${version}-darwin_arm64.zip"    ;;
+    macos-x86_64)  echo "fzf-${version}-darwin_amd64.zip"    ;;
+    linux-x86_64)  echo "fzf-${version}-linux_amd64.tar.gz"  ;;
+    linux-arm64)   echo "fzf-${version}-linux_arm64.tar.gz"  ;;
     *) error "Unsupported platform: ${OS}-${ARCH}"; return 1 ;;
   esac
 }
 
-_fzf_latest_version() {
-  curl -fsSL -o /dev/null -w '%{url_effective}' \
-    "https://github.com/${_fzf_repo}/releases/latest" \
-    | sed 's|.*/||'
-}
-
 _fzf_url() {
-  local version asset
-  version="$(_fzf_latest_version)" || return 1
-  asset="$(_fzf_asset)" || return 1
-  asset="${asset//VERSION/${version}}"
+  local version="$1" asset
+  asset="$(_fzf_asset "$version")" || return 1
   echo "https://github.com/${_fzf_repo}/releases/download/${version}/${asset}"
 }
 
 _fzf_install_from_release() {
-  local url version tmpdir
-  version="$(_fzf_latest_version)" || return 1
-  url="$(_fzf_url)" || return 1
+  local version url tmpdir
+  version="$(github_latest_version "$_fzf_repo")" || return 1
+  url="$(_fzf_url "$version")" || return 1
   tmpdir="$(mktemp -d)"
 
   info "Downloading fzf ${version}..."
@@ -50,14 +43,12 @@ _fzf_install_from_release() {
   cp "${tmpdir}/out/fzf" "${DOT_BIN}/fzf"
   chmod +x "${DOT_BIN}/fzf"
 
-  # Write etag stamp
   local etag
   etag="$(remote_etag "$url")"
   [[ -n "$etag" ]] && write_stamp "$MODULE_NAME" "$etag"
 
   rm -rf "$tmpdir"
 
-  # Deploy shell integration
   _fzf_setup_shell_integration
 
   success "fzf ${version} installed to ${DOT_BIN}/fzf"
@@ -68,6 +59,12 @@ _fzf_setup_shell_integration() {
   local target="${HOME}/.config/fzf/fzf.zsh"
 
   mkdir -p "${HOME}/.config/fzf"
+
+  # Cache fzf's built-in shell integration so we don't fork on every shell open
+  if "${DOT_BIN}/fzf" --zsh &>/dev/null; then
+    "${DOT_BIN}/fzf" --zsh > "${HOME}/.config/fzf/fzf-builtins.zsh" 2>/dev/null
+  fi
+
   ln -sf "$fzf_config" "$target"
 
   # Source from .zshrc if not already present
@@ -86,8 +83,9 @@ module_install() {
 }
 
 module_update() {
-  local url
-  url="$(_fzf_url)" || return 1
+  local version url
+  version="$(github_latest_version "$_fzf_repo")" || return 1
+  url="$(_fzf_url "$version")" || return 1
 
   if needs_update "$MODULE_NAME" "$url" "${DOT_BIN}/fzf"; then
     info "Update available for fzf"

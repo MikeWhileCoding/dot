@@ -6,52 +6,52 @@
 # Ctrl+T  — fuzzy file finder, pastes path into current command
 # Alt+C   — fuzzy directory finder, cd into selection
 
-# Use built-in fzf shell integration if available (fzf >= 0.48)
-if command -v fzf &>/dev/null; then
-  eval "$(fzf --zsh 2>/dev/null)" || {
-    # Fallback: manual key binding setup for older fzf versions
+# Use cached fzf builtins (generated at install time) or fall back to manual bindings
+if [[ -f "${HOME}/.config/fzf/fzf-builtins.zsh" ]]; then
+  source "${HOME}/.config/fzf/fzf-builtins.zsh"
+elif command -v fzf &>/dev/null; then
+  # Fallback: manual key binding setup for older fzf versions
 
-    # Ctrl+R — history search
-    __fzf_history() {
-      local selected
-      selected=$(fc -rln 1 | fzf --height=40% --reverse --tac +s -q "${LBUFFER}")
-      if [[ -n "$selected" ]]; then
-        LBUFFER="$selected"
-      fi
-      zle redisplay
-    }
-    zle -N __fzf_history
-    bindkey '^R' __fzf_history
-
-    # Ctrl+T — file finder
-    __fzf_file() {
-      local selected
-      selected=$(find . -path '*/\.*' -prune -o -type f -print -o -type l -print 2>/dev/null \
-        | sed 's|^\./||' \
-        | fzf --height=40% --reverse -m)
-      if [[ -n "$selected" ]]; then
-        LBUFFER="${LBUFFER}${selected}"
-      fi
-      zle redisplay
-    }
-    zle -N __fzf_file
-    bindkey '^T' __fzf_file
-
-    # Alt+C — directory changer
-    __fzf_cd() {
-      local selected
-      selected=$(find . -path '*/\.*' -prune -o -type d -print 2>/dev/null \
-        | sed 's|^\./||' \
-        | fzf --height=40% --reverse +m)
-      if [[ -n "$selected" ]]; then
-        cd "$selected" || return
-        zle accept-line
-      fi
-      zle redisplay
-    }
-    zle -N __fzf_cd
-    bindkey '\ec' __fzf_cd
+  # Ctrl+R — history search
+  __fzf_history() {
+    local selected
+    selected=$(fc -rln 1 | fzf --height=40% --reverse --tac +s -q "${LBUFFER}")
+    if [[ -n "$selected" ]]; then
+      LBUFFER="$selected"
+    fi
+    zle redisplay
   }
+  zle -N __fzf_history
+  bindkey '^R' __fzf_history
+
+  # Ctrl+T — file finder
+  __fzf_file() {
+    local selected
+    selected=$(find . -path '*/\.*' -prune -o -type f -print -o -type l -print 2>/dev/null \
+      | sed 's|^\./||' \
+      | fzf --height=40% --reverse -m)
+    if [[ -n "$selected" ]]; then
+      LBUFFER="${LBUFFER}${selected}"
+    fi
+    zle redisplay
+  }
+  zle -N __fzf_file
+  bindkey '^T' __fzf_file
+
+  # Alt+C — directory changer
+  __fzf_cd() {
+    local selected
+    selected=$(find . -path '*/\.*' -prune -o -type d -print 2>/dev/null \
+      | sed 's|^\./||' \
+      | fzf --height=40% --reverse +m)
+    if [[ -n "$selected" ]]; then
+      cd "$selected" || return
+      zle accept-line
+    fi
+    zle redisplay
+  }
+  zle -N __fzf_cd
+  bindkey '\ec' __fzf_cd
 fi
 
 # ── Default options ───────────────────────────────────────────────────
