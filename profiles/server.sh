@@ -6,9 +6,10 @@ PROFILE_DESC="Lean server baseline"
 
 PROFILE_MODULES=(
   neovim
-  # tmux
-  # fzf
-  # ripgrep
+  tmux
+  fzf
+  ripgrep
+  delta
 )
 
 profile_post_install() {

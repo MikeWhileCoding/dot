@@ -6,9 +6,10 @@ PROFILE_DESC="Full workstation environment"
 
 PROFILE_MODULES=(
   neovim
-  # tmux
-  # fzf
-  # ripgrep
+  tmux
+  fzf
+  ripgrep
+  delta
   # starship
   # zoxide
 )

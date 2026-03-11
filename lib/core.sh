@@ -2,9 +2,10 @@
 # core.sh — shared helpers for dot CLI
 
 # ── Paths ──────────────────────────────────────────────────────────────
-DOT_BIN="${HOME}/.local/bin"
-DOT_OPT="${HOME}/.local/opt"
-DOT_DATA="${HOME}/.local/share/dot"
+DOT_PREFIX="${HOME}/.local"
+DOT_BIN="${DOT_PREFIX}/bin"
+DOT_OPT="${DOT_PREFIX}/opt"
+DOT_DATA="${DOT_PREFIX}/share/dot"
 
 # ── Colors ─────────────────────────────────────────────────────────────
 _c_reset=$'\033[0m'
@@ -80,6 +81,19 @@ needs_update() {
   [[ "$remote_tag" != "$local_tag" ]] && return 0
 
   return 1
+}
+
+github_latest_version() {
+  # github_latest_version <owner/repo>  — prints the latest release tag
+  local version
+  version="$(curl -fsSL -o /dev/null -w '%{url_effective}' \
+    "https://github.com/${1}/releases/latest" \
+    | sed 's|.*/||')"
+  if [[ -z "$version" ]]; then
+    error "Failed to resolve latest version for ${1}"
+    return 1
+  fi
+  echo "$version"
 }
 
 ensure_path_entry() {
