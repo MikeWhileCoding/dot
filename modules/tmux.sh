@@ -6,9 +6,80 @@ MODULE_DESC="tmux — terminal multiplexer with persistent sessions"
 
 _tmux_repo="tmux/tmux"
 
+_tmux_nproc() {
+  nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2
+}
+
+_tmux_ensure_libevent() {
+  # Skip if libevent is already findable by the compiler
+  if pkg-config --exists libevent 2>/dev/null; then
+    info "libevent found via pkg-config"
+    return 0
+  fi
+  # Check common header locations
+  if [[ -f /usr/include/event2/event.h ]] || [[ -f /usr/local/include/event2/event.h ]] \
+     || [[ -f "${DOT_PREFIX}/include/event2/event.h" ]]; then
+    info "libevent headers found"
+    return 0
+  fi
+
+  local tmpdir="$1"
+  local libevent_version="2.1.12"
+  local libevent_url="https://github.com/libevent/libevent/releases/download/release-${libevent_version}-stable/libevent-${libevent_version}-stable.tar.gz"
+
+  info "Building libevent ${libevent_version} from source..."
+  fetch "$libevent_url" "${tmpdir}/libevent.tar.gz" || { error "Failed to download libevent"; return 1; }
+  mkdir -p "${tmpdir}/libevent"
+  tar -xzf "${tmpdir}/libevent.tar.gz" -C "${tmpdir}/libevent" --strip-components=1
+
+  (
+    cd "${tmpdir}/libevent" || return 1
+    ./configure --prefix="${DOT_PREFIX}" --disable-shared --enable-static 2>&1 | tail -1
+    make -j"$(_tmux_nproc)" 2>&1 | tail -1
+    make install 2>&1 | tail -1
+  ) || { error "libevent build failed"; return 1; }
+
+  success "libevent installed to ${DOT_PREFIX}"
+}
+
+_tmux_ensure_ncurses() {
+  # Skip if ncurses is already findable
+  if pkg-config --exists ncurses 2>/dev/null || pkg-config --exists ncursesw 2>/dev/null; then
+    info "ncurses found via pkg-config"
+    return 0
+  fi
+  if [[ -f /usr/include/ncurses.h ]] || [[ -f /usr/local/include/ncurses.h ]] \
+     || [[ -f "${DOT_PREFIX}/include/ncurses.h" ]]; then
+    info "ncurses headers found"
+    return 0
+  fi
+
+  local tmpdir="$1"
+  local ncurses_version="6.5"
+  local ncurses_url="https://ftp.gnu.org/gnu/ncurses/ncurses-${ncurses_version}.tar.gz"
+
+  info "Building ncurses ${ncurses_version} from source..."
+  fetch "$ncurses_url" "${tmpdir}/ncurses.tar.gz" || { error "Failed to download ncurses"; return 1; }
+  mkdir -p "${tmpdir}/ncurses"
+  tar -xzf "${tmpdir}/ncurses.tar.gz" -C "${tmpdir}/ncurses" --strip-components=1
+
+  (
+    cd "${tmpdir}/ncurses" || return 1
+    ./configure --prefix="${DOT_PREFIX}" --with-shared --with-termlib --enable-widec 2>&1 | tail -1
+    make -j"$(_tmux_nproc)" 2>&1 | tail -1
+    make install 2>&1 | tail -1
+  ) || { error "ncurses build failed"; return 1; }
+
+  success "ncurses installed to ${DOT_PREFIX}"
+}
+
 _tmux_build_from_source() {
   local version="$1" tmpdir
   tmpdir="$(mktemp -d)"
+
+  # Ensure dependencies are available, building from source if needed
+  _tmux_ensure_libevent "$tmpdir" || { rm -rf "$tmpdir"; return 1; }
+  _tmux_ensure_ncurses "$tmpdir"  || { rm -rf "$tmpdir"; return 1; }
 
   local tarball="https://github.com/${_tmux_repo}/releases/download/${version}/tmux-${version}.tar.gz"
   info "Downloading tmux ${version} source..."
@@ -20,9 +91,12 @@ _tmux_build_from_source() {
 
   (
     cd "${tmpdir}/src" || return 1
-    ./configure --prefix="${DOT_PREFIX}" 2>&1 | tail -1
-    make -j"$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)" 2>&1 | tail -1
-  ) || { error "Build failed — ensure a C compiler, libevent, and ncurses are available"; rm -rf "$tmpdir"; return 1; }
+    PKG_CONFIG_PATH="${DOT_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH:-}" \
+    CFLAGS="-I${DOT_PREFIX}/include -I${DOT_PREFIX}/include/ncursesw ${CFLAGS:-}" \
+    LDFLAGS="-L${DOT_PREFIX}/lib ${LDFLAGS:-}" \
+      ./configure --prefix="${DOT_PREFIX}" 2>&1 | tail -1
+    make -j"$(_tmux_nproc)" 2>&1 | tail -1
+  ) || { error "Build failed — ensure a C compiler is available"; rm -rf "$tmpdir"; return 1; }
 
   cp "${tmpdir}/src/tmux" "${DOT_BIN}/tmux"
   chmod +x "${DOT_BIN}/tmux"
