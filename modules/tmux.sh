@@ -94,7 +94,7 @@ _tmux_build_from_source() {
     PKG_CONFIG_PATH="${DOT_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH:-}" \
     CFLAGS="-I${DOT_PREFIX}/include -I${DOT_PREFIX}/include/ncursesw ${CFLAGS:-}" \
     LDFLAGS="-L${DOT_PREFIX}/lib ${LDFLAGS:-}" \
-      ./configure --prefix="${DOT_PREFIX}" 2>&1 | tail -1
+      ./configure --prefix="${DOT_PREFIX}" --disable-utf8proc 2>&1 | tail -1
     make -j"$(_tmux_nproc)" 2>&1 | tail -1
   ) || { error "Build failed — ensure a C compiler is available"; rm -rf "$tmpdir"; return 1; }
 
