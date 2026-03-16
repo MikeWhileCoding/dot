@@ -32,7 +32,7 @@ _nvm_install() {
 
   info "Installing Node.js LTS..."
   nvm install --lts || { error "Node.js LTS install failed"; return 1; }
-  nvm alias default lts/* 2>/dev/null || true
+  nvm alias default 'lts/*' 2>/dev/null || true
 
   # Add nvm init to .zshrc if not already present
   local nvm_init
@@ -52,7 +52,7 @@ module_install() {
     _nvm_load
     if ! command -v node &>/dev/null; then
       info "Installing Node.js LTS..."
-      nvm install --lts && nvm alias default lts/* 2>/dev/null || true
+      nvm install --lts && nvm alias default 'lts/*' 2>/dev/null || true
     fi
     return 0
   fi
@@ -75,7 +75,7 @@ module_update() {
     _nvm_install
   else
     info "Checking for Node.js LTS updates..."
-    nvm install --lts && nvm alias default lts/* 2>/dev/null || true
+    nvm install --lts && nvm alias default 'lts/*' 2>/dev/null || true
     success "nvm ${latest} is up to date"
   fi
 }
