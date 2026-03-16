@@ -67,6 +67,9 @@ _claude_install_from_npm() {
   etag="$(remote_etag "$_claude_registry_url")"
   [[ -n "$etag" ]] && write_stamp "$MODULE_NAME" "$etag"
 
+  info "Running claude install..."
+  "${DOT_BIN}/claude" install || { error "claude install failed"; return 1; }
+
   _claude_configure_statusline
 
   local version
