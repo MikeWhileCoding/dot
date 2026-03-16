@@ -12,6 +12,23 @@ _nvm_load() {
   [[ -s "${_nvm_dir}/nvm.sh" ]] && source "${_nvm_dir}/nvm.sh"
 }
 
+# Symlink node and npm into ~/.local/bin so they're in PATH without nvm being sourced
+_nvm_link_bins() {
+  local node_path npm_path npx_path
+  node_path="$(command -v node 2>/dev/null)"
+  npm_path="$(command -v npm 2>/dev/null)"
+  npx_path="$(command -v npx 2>/dev/null)"
+
+  if [[ -n "$node_path" ]]; then
+    ln -sf "$node_path" "${DOT_BIN}/node"
+  else
+    warn "node binary not found after install — PATH may need manual update"
+    return 1
+  fi
+  [[ -n "$npm_path" ]] && ln -sf "$npm_path" "${DOT_BIN}/npm"
+  [[ -n "$npx_path" ]] && ln -sf "$npx_path" "${DOT_BIN}/npx"
+}
+
 _nvm_install() {
   local version url tmpfile
   version="$(github_latest_version "$_nvm_repo")" || return 1
@@ -31,6 +48,8 @@ _nvm_install() {
   info "Installing Node.js LTS..."
   nvm install --lts || { error "Node.js LTS install failed"; return 1; }
   nvm alias default 'lts/*' 2>/dev/null || true
+
+  _nvm_link_bins
 
   # Add nvm init to .zshrc if not already present
   local nvm_init
@@ -52,6 +71,7 @@ module_install() {
       info "Installing Node.js LTS..."
       nvm install --lts && nvm alias default 'lts/*' 2>/dev/null || true
     fi
+    _nvm_link_bins
     return 0
   fi
   _nvm_install
@@ -74,6 +94,7 @@ module_update() {
   else
     info "Checking for Node.js LTS updates..."
     nvm install --lts && nvm alias default 'lts/*' 2>/dev/null || true
+    _nvm_link_bins
     success "nvm ${latest} is up to date"
   fi
 }
@@ -86,6 +107,7 @@ module_status() {
     node_version="$(node --version 2>/dev/null)"
     info "nvm: ${nvm_version}"
     info "node: ${node_version}"
+    [[ -L "${DOT_BIN}/node" ]] && info "node symlink: ${DOT_BIN}/node → $(readlink "${DOT_BIN}/node")"
   else
     warn "nvm is not installed"
   fi
