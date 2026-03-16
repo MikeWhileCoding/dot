@@ -9,9 +9,7 @@ _nvm_repo="nvm-sh/nvm"
 
 _nvm_load() {
   export NVM_DIR="$_nvm_dir"
-  [[ -s "${_nvm_dir}/nvm.sh" ]] && source "${_nvm_dir}/nvm.sh" --no-use
-  # Activate the default alias so node/npm are in PATH
-  nvm use default &>/dev/null || nvm use --lts &>/dev/null || true
+  [[ -s "${_nvm_dir}/nvm.sh" ]] && source "${_nvm_dir}/nvm.sh"
 }
 
 _nvm_install() {

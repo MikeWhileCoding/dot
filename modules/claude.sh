@@ -12,8 +12,7 @@ _claude_require_npm() {
   if ! command -v npm &>/dev/null; then
     if [[ -s "${HOME}/.nvm/nvm.sh" ]]; then
       export NVM_DIR="${HOME}/.nvm"
-      source "${NVM_DIR}/nvm.sh" --no-use
-      nvm use default &>/dev/null || nvm use --lts &>/dev/null || true
+      source "${NVM_DIR}/nvm.sh"
     fi
   fi
   if ! command -v npm &>/dev/null; then
