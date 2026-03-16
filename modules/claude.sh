@@ -89,6 +89,7 @@ module_update() {
   else
     success "claude is already up to date"
   fi
+  _claude_configure_statusline
 }
 
 module_status() {
