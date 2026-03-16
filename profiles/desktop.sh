@@ -10,6 +10,8 @@ PROFILE_MODULES=(
   fzf
   ripgrep
   delta
+  nvm
+  claude
   # starship
   # zoxide
 )
