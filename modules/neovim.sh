@@ -54,12 +54,37 @@ SHIM
   success "Neovim installed to ${DOT_OPT}/nvim"
 }
 
+_nvim_link_config() {
+  local src="${DOT_REPO}/configs/nvim"
+  local dst="${HOME}/.config/nvim"
+
+  if [[ ! -d "$src" ]]; then
+    warn "No nvim config found at ${src}, skipping config link"
+    return 0
+  fi
+
+  if [[ -L "$dst" ]]; then
+    success "Neovim config already linked"
+    return 0
+  fi
+
+  if [[ -d "$dst" && ! -L "$dst" ]]; then
+    warn "~/.config/nvim exists and is not a symlink; backing up to ${dst}.bak"
+    mv "$dst" "${dst}.bak"
+  fi
+
+  mkdir -p "${HOME}/.config"
+  ln -sf "$src" "$dst"
+  success "Neovim config linked: ${dst} → ${src}"
+}
+
 module_install() {
   if [[ -x "${DOT_BIN}/nvim" ]]; then
     warn "Neovim is already installed (use 'dot update neovim' to update)"
-    return 0
+  else
+    _nvim_install_from_archive
   fi
-  _nvim_install_from_archive
+  _nvim_link_config
 }
 
 module_update() {
@@ -72,6 +97,7 @@ module_update() {
   else
     success "Neovim is already up to date"
   fi
+  _nvim_link_config
 }
 
 module_status() {
@@ -83,5 +109,12 @@ module_status() {
     [[ -n "$stamp" ]] && info "ETag stamp: ${stamp}"
   else
     warn "Neovim is not installed"
+  fi
+
+  local dst="${HOME}/.config/nvim"
+  if [[ -L "$dst" ]]; then
+    info "Config: ${dst} → $(readlink "$dst")"
+  else
+    warn "Config: ~/.config/nvim is not symlinked (run 'dot install neovim')"
   fi
 }
