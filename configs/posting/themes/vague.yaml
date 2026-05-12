@@ -1,0 +1,37 @@
+name: vague
+primary: '#6e94b2'     # buttons, fixed table columns
+secondary: '#f3be7c'   # method selector, minor labels
+accent: '#aeaed1'      # header text, scrollbars, cursors, focus highlights
+background: '#141415'  # background colors
+surface: '#1c1c24'     # panels, etc
+error: '#d8647e'       # error messages
+success: '#7fa563'     # success messages
+warning: '#e8b589'     # warning messages
+
+text_area:
+  cursor: 'reverse'
+  cursor_line: 'underline'
+  selection: 'reverse'
+  gutter: 'bold #606079'
+  matched_bracket: '#141415 on #f3be7c'
+
+url:
+  base: 'italic #9bb4bc'
+  protocol: 'bold #b4d4cf'
+
+syntax:
+  json_key: 'italic #7e98e8'
+  json_number: '#f3be7c'
+  json_string: '#7fa563'
+  json_boolean: '#bb9dbd'
+  json_null: 'underline #606079'
+
+method:
+  get: 'underline #aeaed1'
+  post: 'italic #7fa563'
+  put: 'bold #f3be7c'
+  delete: 'strikethrough #d8647e'
+
+author: mike.de.groot
+description: Vague — muted dark theme with desaturated blues and warm accents.
+homepage: https://github.com/vague-theme/vague

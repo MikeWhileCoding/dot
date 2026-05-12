@@ -78,6 +78,10 @@ _nvim_link_config() {
   success "Neovim config linked: ${dst} → ${src}"
 }
 
+module_config() {
+  _nvim_link_config
+}
+
 module_install() {
   if [[ -x "${DOT_BIN}/nvim" ]]; then
     warn "Neovim is already installed (use 'dot update neovim' to update)"

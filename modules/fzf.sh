@@ -75,6 +75,10 @@ _fzf_setup_shell_integration() {
   fi
 }
 
+module_config() {
+  _fzf_setup_shell_integration
+}
+
 module_install() {
   if [[ -x "${DOT_BIN}/fzf" ]]; then
     warn "fzf is already installed (use 'dot update fzf' to update)"

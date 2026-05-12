@@ -12,6 +12,8 @@ PROFILE_MODULES=(
   delta
   gh
   nvm
+  uv
+  posting
   claude
   # starship
   # zoxide

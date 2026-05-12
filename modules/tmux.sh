@@ -175,6 +175,10 @@ _tmux_bin() {
   fi
 }
 
+module_config() {
+  _tmux_deploy_config
+}
+
 module_install() {
   _tmux_install_binary || return 1
   _tmux_deploy_config
