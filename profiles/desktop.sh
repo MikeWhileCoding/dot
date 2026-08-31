@@ -5,6 +5,7 @@ PROFILE_NAME="desktop"
 PROFILE_DESC="Full workstation environment"
 
 PROFILE_MODULES=(
+  zsh
   neovim
   tmux
   fzf

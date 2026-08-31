@@ -70,9 +70,7 @@ _fzf_setup_shell_integration() {
 
   # Source from .zshrc if not already present
   local source_line='[[ -f "${HOME}/.config/fzf/fzf.zsh" ]] && source "${HOME}/.config/fzf/fzf.zsh"'
-  if [[ -f "${HOME}/.zshrc" ]]; then
-    grep -qF 'fzf/fzf.zsh' "${HOME}/.zshrc" || printf '\n# fzf shell integration\n%s\n' "$source_line" >> "${HOME}/.zshrc"
-  fi
+  rc_append_once "${HOME}/.zshrc" 'fzf/fzf.zsh' 'fzf shell integration' "$source_line"
 }
 
 module_config() {

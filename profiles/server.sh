@@ -5,6 +5,7 @@ PROFILE_NAME="server"
 PROFILE_DESC="Lean server baseline"
 
 PROFILE_MODULES=(
+  zsh
   neovim
   tmux
   fzf

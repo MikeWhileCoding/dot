@@ -82,7 +82,17 @@ module_config() {
   _nvim_link_config
 }
 
+# Treesitter parsers and telescope-fzf-native are compiled on first launch,
+# so nvim is only fully functional with a working toolchain.
+_nvim_check_build_tools() {
+  ensure_build_tools "Neovim plugins (treesitter parsers, telescope-fzf-native)" \
+    || warn "Neovim will install, but treesitter/fzf-native builds will fail until make and gcc are available"
+  return 0
+}
+
 module_install() {
+  _nvim_check_build_tools
+
   if [[ -x "${DOT_BIN}/nvim" ]]; then
     warn "Neovim is already installed (use 'dot update neovim' to update)"
   else
@@ -113,6 +123,12 @@ module_status() {
     [[ -n "$stamp" ]] && info "ETag stamp: ${stamp}"
   else
     warn "Neovim is not installed"
+  fi
+
+  if have_build_tools; then
+    info "Build tools: make + $(command -v cc || command -v gcc || command -v clang)"
+  else
+    warn "Build tools: make/gcc missing — treesitter parsers cannot compile"
   fi
 
   local dst="${HOME}/.config/nvim"

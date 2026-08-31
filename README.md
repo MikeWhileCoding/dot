@@ -6,11 +6,35 @@ _Note: this project is vibe-coded and may include errors. The intention for it b
 
 ## Requirements
 
-- `zsh`
+- `zsh` — `dot` is written in zsh, so it cannot run without it. Use `./bootstrap.sh` (POSIX `sh`) to install zsh on a machine that doesn't have it.
 - `curl`
 - `tar`
+- `make` + `gcc`/`clang` — only needed for source-built modules (`tmux`, `zsh`) and for Neovim plugins that compile native code (treesitter parsers, telescope-fzf-native). `dot init` checks for these and offers to install them.
 
 ## Quick start
+
+### Option 0: No zsh yet? Bootstrap first
+
+`dot` is a zsh script, so a machine without zsh can't run it. `bootstrap.sh` is plain POSIX `sh`: it installs zsh (package manager first, source build into `~/.local` as the sudo-free fallback) and then hands off to `dot init`.
+
+```sh
+git clone https://github.com/MikeWhileCoding/dot.git ~/.config/dot
+~/.config/dot/bootstrap.sh          # add --yes to skip the prompts
+```
+
+If you already have zsh, skip straight to `dot init`:
+
+```sh
+./dot init
+```
+
+`dot init` checks the environment and tells you how to fix what's missing:
+
+- zsh is installed, and whether it's your **login shell** (prints the `chsh` command if not)
+- `curl`, `tar`, `git` — offers to install any that are missing
+- `make` + a C compiler — offers to install them (`build-essential`, `base-devel`, …)
+- `~/.local/bin` is on your `PATH` — adds it to your shell rc if not
+- offers to symlink `dot` into `~/.local/bin`
 
 ### Option 1: Run from git source
 
@@ -41,6 +65,7 @@ Now `dot` is available as a command (assuming `~/.local/bin` is in your PATH —
 ## Usage
 
 ```
+dot init                          Check the environment (zsh, build tools, PATH)
 dot install <module>              Install a single module
 dot install --profile <name>      Install all modules in a profile
 dot update [<module>|all]         Update one module or everything
@@ -52,6 +77,9 @@ dot help                          Show help
 ### Examples
 
 ```sh
+# Check the environment before installing anything
+dot init
+
 # Install neovim nightly (binary + config symlink)
 dot install neovim
 
@@ -74,10 +102,12 @@ dot update neovim
 ## Project structure
 
 ```
+bootstrap.sh             # POSIX sh entry point — installs zsh, then runs `dot init`
 dot                      # main CLI entry point (zsh, executable)
 lib/core.sh              # shared helpers (logging, OS detection, update checks)
 modules/                 # one file per tool
 configs/
+  zshrc                  # managed ~/.zshrc — oh-my-zsh setup and plugin list
   nvim/                  # Neovim config (symlinked to ~/.config/nvim on install)
     init.lua
     lua/
@@ -110,6 +140,7 @@ Everything installs into `~/.local`:
 
 | Module | Description |
 |---|---|
+| `zsh` | zsh itself + oh-my-zsh — installs both if missing, symlinks `configs/zshrc` → `~/.zshrc` |
 | `neovim` | Neovim nightly — pre-built binary + symlinks `configs/nvim/` |
 | `tmux` | tmux — built from source |
 | `fzf` | fzf — fuzzy finder |
@@ -117,14 +148,33 @@ Everything installs into `~/.local`:
 | `delta` | delta — git diff pager |
 | `gh` | GitHub CLI |
 | `nvm` | Node Version Manager |
+| `uv` | uv — Python package/project manager |
+| `posting` | posting — TUI HTTP client |
+| `aliases` | Shell aliases sourced from `configs/aliases.zsh` |
 | `claude` | Claude Code CLI |
 
 ## Profiles
 
 | Profile | Modules | Description |
 |---|---|---|
-| `desktop` | neovim, tmux, fzf, ripgrep, delta, gh, nvm, claude | Full workstation |
-| `server` | neovim, tmux, fzf, ripgrep, delta | Lean baseline |
+| `desktop` | zsh, neovim, tmux, fzf, ripgrep, delta, gh, nvm, uv, posting, claude | Full workstation |
+| `server` | zsh, neovim, tmux, fzf, ripgrep, delta | Lean baseline |
+
+## Shell config (oh-my-zsh)
+
+`dot install zsh` clones [oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh) into `~/.local/opt/oh-my-zsh` and symlinks `configs/zshrc` → `~/.zshrc`. An existing unmanaged `~/.zshrc` is backed up to `~/.zshrc.bak` first.
+
+Enabled plugins:
+
+| Plugin | What it adds |
+|---|---|
+| `git` | `gst`, `gco`, `gp`, `gd`, `glog`, `gcm`, … plus branch helpers |
+| `github` | `gh`/`hub` completion and GitHub helper functions |
+| `docker` | docker CLI completion, `dps`, `dbl`, container/image shortcuts |
+
+To change them, edit the `plugins=(...)` array in `configs/zshrc` and open a new shell — no reinstall needed, since `~/.zshrc` is a symlink into the repo. `dot update zsh` pulls the latest oh-my-zsh (its own auto-update prompt is disabled).
+
+Machine-specific settings that shouldn't be committed go in `~/.zshrc.local`, which the managed `zshrc` sources last.
 
 ## Neovim config
 

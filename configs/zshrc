@@ -1,0 +1,39 @@
+# ~/.zshrc — managed by dot CLI
+# Edit in the dotfiles repo (configs/zshrc), not in-place.
+# Machine-specific tweaks belong in ~/.zshrc.local, sourced at the end.
+
+# ── PATH ──────────────────────────────────────────────────────────────
+# Keep the ".local/bin" string on this line — ensure_path_entry greps for it.
+export PATH="${HOME}/.local/bin:${PATH}"
+
+# ── oh-my-zsh ─────────────────────────────────────────────────────────
+export ZSH="${HOME}/.local/opt/oh-my-zsh"
+ZSH_THEME="robbyrussell"
+
+# Plugins (dot installs oh-my-zsh itself into $ZSH):
+#   git    — branch/status aliases: gst, gco, gp, gd, glog, gcm, …
+#   github — gh/hub completion plus GitHub helper functions
+#   docker — docker CLI completion and container/image shortcuts
+plugins=(
+  git
+  github
+  docker
+)
+
+# Skip oh-my-zsh's own update prompt — `dot update zsh` handles it
+DISABLE_AUTO_UPDATE="true"
+
+if [[ -f "${ZSH}/oh-my-zsh.sh" ]]; then
+  source "${ZSH}/oh-my-zsh.sh"
+fi
+
+# ── dot-managed config ────────────────────────────────────────────────
+# These lines double as the needles the aliases/fzf modules grep for, so they
+# never append duplicates to this file.
+[[ -f "${HOME}/.config/dot/aliases.zsh" ]] && source "${HOME}/.config/dot/aliases.zsh"
+[[ -f "${HOME}/.config/fzf/fzf.zsh" ]] && source "${HOME}/.config/fzf/fzf.zsh"
+
+# ── Local overrides (never managed by dot) ────────────────────────────
+[[ -f "${HOME}/.zshrc.local" ]] && source "${HOME}/.zshrc.local"
+
+true

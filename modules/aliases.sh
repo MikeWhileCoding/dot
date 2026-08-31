@@ -12,9 +12,7 @@ _aliases_setup() {
   ln -sf "$src" "$target"
 
   local source_line='[[ -f "${HOME}/.config/dot/aliases.zsh" ]] && source "${HOME}/.config/dot/aliases.zsh"'
-  if [[ -f "${HOME}/.zshrc" ]]; then
-    grep -qF 'dot/aliases.zsh' "${HOME}/.zshrc" || printf '\n# dot aliases\n%s\n' "$source_line" >> "${HOME}/.zshrc"
-  fi
+  rc_append_once "${HOME}/.zshrc" 'dot/aliases.zsh' 'dot aliases' "$source_line"
 }
 
 module_config() {

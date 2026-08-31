@@ -129,6 +129,87 @@ cmd_config() {
   fi
 }
 
+cmd_init() {
+  # Bootstrap / doctor: verify the environment dot needs, and offer to fix it.
+  header "dot init — environment check"
+
+  local issues=0
+
+  # ── zsh ──────────────────────────────────────────────────────────────
+  # If we got this far zsh exists (dot runs under it), but it may not be the
+  # login shell — and ./bootstrap.sh is what handles a machine without zsh.
+  local zsh_path="${commands[zsh]:-}"
+  if [[ -n "$zsh_path" ]]; then
+    success "zsh: $(zsh --version 2>/dev/null) (${zsh_path})"
+    if [[ "${SHELL:t}" != "zsh" ]]; then
+      warn "Login shell is ${SHELL:-unknown}, not zsh"
+      if ! grep -qxF "$zsh_path" /etc/shells 2>/dev/null; then
+        info "  Register it:  echo '${zsh_path}' | sudo tee -a /etc/shells"
+      fi
+      info "  Make default: chsh -s ${zsh_path}"
+      issues=$(( issues + 1 ))
+    fi
+  else
+    error "zsh is not installed — run ./bootstrap.sh to install it"
+    issues=$(( issues + 1 ))
+  fi
+
+  # ── Required tools ───────────────────────────────────────────────────
+  local tool missing=()
+  for tool in curl tar git; do
+    if command -v "$tool" &>/dev/null; then
+      success "${tool}: $(command -v $tool)"
+    else
+      error "${tool}: missing"
+      missing+=("$tool")
+      issues=$(( issues + 1 ))
+    fi
+  done
+  if (( ${#missing[@]} )); then
+    local cmd
+    if cmd="$(pkg_install_cmd ${missing[@]})"; then
+      info "  Install with: ${cmd}"
+      if confirm "Run this now?"; then
+        eval "$cmd" && success "Installed: ${missing[*]}" || warn "Install failed"
+      fi
+    fi
+  fi
+
+  # ── Build toolchain (make + gcc) ─────────────────────────────────────
+  # Needed by neovim (treesitter, fzf-native) and any source-built module.
+  if have_build_tools; then
+    success "build tools: make + $(command -v cc || command -v gcc || command -v clang)"
+  else
+    ensure_build_tools "Neovim treesitter parsers and source-built modules (tmux, zsh)" || issues=$(( issues + 1 ))
+  fi
+
+  # ── PATH ─────────────────────────────────────────────────────────────
+  if [[ ":${PATH}:" == *":${DOT_BIN}:"* ]]; then
+    success "PATH: ${DOT_BIN} is on your PATH"
+  else
+    warn "PATH: ${DOT_BIN} is not on your PATH — adding it to your shell rc"
+    ensure_path_entry
+    info "  Run: source ~/.zshrc"
+    issues=$(( issues + 1 ))
+  fi
+
+  # ── dot on PATH ──────────────────────────────────────────────────────
+  if [[ ! -e "${DOT_BIN}/dot" ]] && [[ "${commands[dot]:-}" != "${DOT_REPO}/dot" ]]; then
+    if confirm "Link 'dot' into ${DOT_BIN}?"; then
+      ln -sf "${DOT_REPO}/dot" "${DOT_BIN}/dot"
+      success "Linked ${DOT_BIN}/dot → ${DOT_REPO}/dot"
+    fi
+  fi
+
+  # ── Summary ──────────────────────────────────────────────────────────
+  echo
+  if (( issues == 0 )); then
+    success "Environment looks good — try: dot install --profile desktop"
+  else
+    warn "${issues} item(s) need attention (see above), then re-run: dot init"
+  fi
+}
+
 cmd_list() {
   header "Modules"
   _list_modules
@@ -141,6 +222,7 @@ cmd_help() {
 Usage: dot <command> [args]
 
 Commands:
+  init                          Check the environment (zsh, build tools, PATH)
   install <module>              Install a single module
   install --profile <name>      Install all modules in a profile
   update [<module>|all]         Update one module or everything
@@ -153,6 +235,7 @@ USAGE
 
 # ── Dispatch ───────────────────────────────────────────────────────────
 case "${1:-help}" in
+  init)    shift; cmd_init    "$@" ;;
   install) shift; cmd_install "$@" ;;
   update)  shift; cmd_update  "$@" ;;
   config)  shift; cmd_config  "$@" ;;
