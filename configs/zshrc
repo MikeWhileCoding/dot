@@ -37,3 +37,11 @@ fi
 [[ -f "${HOME}/.zshrc.local" ]] && source "${HOME}/.zshrc.local"
 
 true
+
+# nvm
+export NVM_DIR="${HOME}/.nvm"
+[[ -s "${NVM_DIR}/nvm.sh" ]] && source "${NVM_DIR}/nvm.sh"
+export BROWSER=wslview
+export BROWSER=/usr/local/bin/wslview
+export PATH="/home/mike/.config/herd-lite/bin:$PATH"
+export PHP_INI_SCAN_DIR="/home/mike/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
