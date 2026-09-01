@@ -26,20 +26,20 @@ return {
       "williamboman/mason-lspconfig.nvim",
       "hrsh7th/cmp-nvim-lsp",
     },
-    config = function()
+    config       = function()
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
       local on_attach = function(_, bufnr)
         local map = function(keys, func, desc)
           vim.keymap.set("n", keys, func, { buffer = bufnr, desc = "LSP: " .. desc })
         end
-        map("gd",         "<cmd>Telescope lsp_definitions<cr>",     "Go to definition")
-        map("gr",         "<cmd>Telescope lsp_references<cr>",      "References")
-        map("gI",         "<cmd>Telescope lsp_implementations<cr>", "Implementations")
-        map("gD",         vim.lsp.buf.declaration,                  "Declaration")
-        map("K",          vim.lsp.buf.hover,                        "Hover docs")
-        map("<leader>rn", vim.lsp.buf.rename,                       "Rename symbol")
-        map("<leader>ca", vim.lsp.buf.code_action,                  "Code action")
+        map("gd", "<cmd>Telescope lsp_definitions<cr>", "Go to definition")
+        map("gr", "<cmd>Telescope lsp_references<cr>", "References")
+        map("gI", "<cmd>Telescope lsp_implementations<cr>", "Implementations")
+        map("gD", vim.lsp.buf.declaration, "Declaration")
+        map("K", vim.lsp.buf.hover, "Hover docs")
+        map("<leader>rn", vim.lsp.buf.rename, "Rename symbol")
+        map("<leader>ca", vim.lsp.buf.code_action, "Code action")
         map("<leader>lf", function() vim.lsp.buf.format({ async = true }) end, "Format")
       end
 
@@ -61,10 +61,23 @@ return {
         },
       })
 
+      vim.lsp.config("laravel_lsp", {
+        cmd = { "laravel-lsp" },
+        filetypes = { "php", "blade" },
+        root_dir = function(bufnr, on_dir)
+          local root = vim.fs.root(bufnr, "artisan")
+
+          if root then
+            on_dir(root)
+          end
+        end,
+      })
+
       -- Enable all servers mason-lspconfig ensures are installed
       vim.lsp.enable({
         "lua_ls", "bashls", "jsonls", "yamlls",
         "pyright", "ts_ls", "html", "cssls",
+        "laravel_lsp",
       })
 
       -- Diagnostics appearance
