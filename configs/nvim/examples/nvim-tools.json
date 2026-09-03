@@ -14,9 +14,9 @@
 
   "xdebug": { "port": 9003 },
 
-  "//tools": "per-tool overrides; any of the keys above plus cmd/args/enabled",
+  "//tools": "per-tool overrides; any of the keys above plus cmd/args/enabled (phpstan: memory_limit defaults to 1G)",
   "tools": {
-    "phpstan": { "args": ["--memory-limit=1G"], "level": 6, "severity": "warn" },
+    "phpstan": { "memory_limit": "2G", "level": 6, "severity": "warn" },
     "blade-formatter": { "runner": "local" },
     "biome": { "service": "node", "workdir": "/app" }
   }

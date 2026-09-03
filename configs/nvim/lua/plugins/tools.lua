@@ -145,7 +145,16 @@ return {
         if not level and not has_phpstan_config(spec.root) then level = 5 end
         if level then table.insert(args, "--level=" .. level) end
         if spec.opts.config then table.insert(args, "--configuration=" .. spec.opts.config) end
-        vim.list_extend(args, spec.opts.args or {})
+        -- Containers usually ship php.ini with memory_limit=128M, which is
+        -- not enough for a Laravel project. Raise it unless the project's
+        -- `tools.phpstan.args` already sets one.
+        local user_args = spec.opts.args or {}
+        local has_memory_limit = false
+        for _, a in ipairs(user_args) do
+          if vim.startswith(a, "--memory-limit") then has_memory_limit = true break end
+        end
+        if not has_memory_limit then table.insert(args, "--memory-limit=" .. (spec.opts.memory_limit or "1G")) end
+        vim.list_extend(args, user_args)
         table.insert(args, rn.to_remote(bufname, spec.env, spec.root))
 
         return {

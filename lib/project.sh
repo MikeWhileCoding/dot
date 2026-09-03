@@ -168,26 +168,46 @@ _project_json_array() {
 
 # ── Building the command prefix (mirrors lua/project/runner.lua) ──────
 
+# A top-level setting, honouring the same precedence as runner.lua:
+# .nvim-tools.local.json overrides .nvim-tools.json.
+_project_setting() {
+  # _project_setting <root> <key>
+  local root="$1" key="$2" value=""
+  value="$(_project_json_get "${root}/${PROJECT_LOCAL_FILE}" "$key")"
+  [[ -n "$value" ]] || value="$(_project_json_get "${root}/${PROJECT_CONFIG_FILE}" "$key")"
+  printf '%s' "$value"
+}
+
+_project_setting_array() {
+  # _project_setting_array <root> <key> — one element per line
+  local root="$1" key="$2" file
+  for file in "${root}/${PROJECT_LOCAL_FILE}" "${root}/${PROJECT_CONFIG_FILE}"; do
+    [[ -f "$file" ]] || continue
+    _project_json_array "$file" "$key" && return 0
+  done
+  return 1
+}
+
 project_prefix() {
   # project_prefix <root> — prints the argv that puts a command in the project's
   # environment, one element per line (empty for the local runner).
-  local root="$1" file="${root}/${PROJECT_CONFIG_FILE}"
+  local root="$1"
   local runner="local" container="" service="" workdir="" user="" compose_file="" sail=""
 
-  if [[ -f "$file" ]]; then
-    runner="$(_project_json_get "$file" runner)"; runner="${runner:-local}"
-    container="$(_project_json_get "$file" container)"
-    service="$(_project_json_get "$file" service)"
-    workdir="$(_project_json_get "$file" workdir)"
-    user="$(_project_json_get "$file" user)"
-    compose_file="$(_project_json_get "$file" compose_file)"
-    sail="$(_project_json_get "$file" sail)"
+  if [[ -f "${root}/${PROJECT_CONFIG_FILE}" || -f "${root}/${PROJECT_LOCAL_FILE}" ]]; then
+    runner="$(_project_setting "$root" runner)"; runner="${runner:-local}"
+    container="$(_project_setting "$root" container)"
+    service="$(_project_setting "$root" service)"
+    workdir="$(_project_setting "$root" workdir)"
+    user="$(_project_setting "$root" user)"
+    compose_file="$(_project_setting "$root" compose_file)"
+    sail="$(_project_setting "$root" sail)"
   fi
 
   case "$runner" in
     local) return 0 ;;
     custom)
-      _project_json_array "$file" prefix || {
+      _project_setting_array "$root" prefix || {
         error "runner \"custom\" needs a \"prefix\" array in ${PROJECT_CONFIG_FILE}"
         return 1
       }
@@ -352,12 +372,18 @@ project_cmd_check() {
   _check_one() {
     # _check_one <label> <cmd...>
     local label="$1"; shift
-    local output=""
-    if output="$( (cd "$root" && "${run_prefix[@]}" "$@") 2>&1 | head -1 )" && [[ -n "$output" ]]; then
-      success "${label}: ${output}"
+    local output="" rc=0 line=""
+    output="$( (cd "$root" && "${run_prefix[@]}" "$@") 2>&1 )" || rc=$?
+    # First non-empty line: a PHP startup warning can push the real version
+    # string down a few lines, and it often begins with a blank one.
+    local -a lines=( "${(@f)output}" )
+    lines=( "${(@M)lines:#*[![:space:]]*}" )
+    line="${lines[1]:-}"
+    if (( rc == 0 )) && [[ -n "$line" ]]; then
+      success "${label}: ${line}"
     else
       warn "${label}: not available"
-      [[ -n "$output" ]] && printf "           %s\n" "$output"
+      [[ -n "$line" ]] && printf "           %s\n" "$line"
       failures=$(( failures + 1 ))
     fi
   }
@@ -370,7 +396,7 @@ project_cmd_check() {
 
   # The path mapping is what makes diagnostics land on the right lines.
   local workdir
-  workdir="$(_project_json_get "${root}/${PROJECT_CONFIG_FILE}" workdir || true)"
+  workdir="$(_project_setting "$root" workdir)"
   if (( ${#run_prefix[@]} )) && [[ -n "$workdir" ]]; then
     echo
     if (cd "$root" && "${run_prefix[@]}" test -e "${workdir}/composer.json" 2>/dev/null) \

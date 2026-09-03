@@ -41,7 +41,10 @@ return {
         map("K", vim.lsp.buf.hover, "Hover docs")
         map("<leader>rn", vim.lsp.buf.rename, "Rename symbol")
         map("<leader>ca", vim.lsp.buf.code_action, "Code action")
-        map("<leader>lf", function() vim.lsp.buf.format({ async = true }) end, "Format")
+        -- Conform picks the project formatter (pint, biome, …) and only falls
+        -- back to the server; calling vim.lsp.buf.format directly fails for
+        -- PHP because Intelephense has formatting disabled.
+        map("<leader>lf", function() require("conform").format({ async = true, lsp_format = "fallback" }) end, "Format")
       end
 
       -- Shared defaults for all servers

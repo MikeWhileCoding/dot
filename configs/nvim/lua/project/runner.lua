@@ -16,7 +16,7 @@
 --     "prefix": ["ssh", "box", "--"],   // runner = "custom"
 --     "xdebug": { "port": 9003 },
 --     "tools": {
---       "phpstan": { "args": ["--memory-limit=2G"] },
+--       "phpstan": { "memory_limit": "2G" },   // default 1G
 --       "blade-formatter": { "runner": "local" },
 --       "biome": { "runner": "compose", "service": "node", "workdir": "/app" }
 --     }
@@ -289,7 +289,7 @@ local EXAMPLE = [[{
   "service": "app",
   "workdir": "/var/www/html",
   "tools": {
-    "phpstan": { "args": ["--memory-limit=1G"] },
+    "phpstan": { "memory_limit": "1G" },
     "blade-formatter": { "runner": "local" }
   }
 }
