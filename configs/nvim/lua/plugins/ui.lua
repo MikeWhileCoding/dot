@@ -14,7 +14,20 @@ return {
         lualine_a = { "mode" },
         lualine_b = { "branch", "diff", "diagnostics" },
         lualine_c = { { "filename", path = 1 } },
-        lualine_x = { "encoding", "fileformat", "filetype" },
+        lualine_x = {
+          -- Copilot autofill state — see lua/ai/init.lua.
+          {
+            function()
+              local ok, ai = pcall(require, "ai")
+              return ok and ai.statusline() or ""
+            end,
+            on_click = function()
+              local ok, ai = pcall(require, "ai")
+              if ok then ai.toggle("autofill") end
+            end,
+          },
+          "encoding", "fileformat", "filetype",
+        },
         lualine_y = { "progress" },
         lualine_z = { "location" },
       },

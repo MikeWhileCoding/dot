@@ -201,6 +201,7 @@ The Neovim config in `configs/nvim/` is set up with [lazy.nvim](https://github.c
 | PHP / Laravel | intelephense + [laravel.nvim](https://github.com/adalessa/laravel.nvim) |
 | Debugging | nvim-dap + dap-ui (Xdebug) |
 | Git | gitsigns + fugitive |
+| AI | [copilot.lua](https://github.com/zbirenbaum/copilot.lua) inline autofill + optional [claudecode.nvim](https://github.com/coder/claudecode.nvim) |
 | UI | lualine, indent-blankline, dressing, which-key |
 
 ### Key bindings
@@ -233,6 +234,57 @@ The Neovim config in `configs/nvim/` is set up with [lazy.nvim](https://github.c
 | `<leader>bb` | Toggle breakpoint |
 | `<leader>bc` / `<F5>` | Start / continue debugging |
 | `<leader>bt` | Toggle debug UI |
+| `<leader>it` | Toggle Copilot |
+| `<leader>ia` | Toggle autofill (ghost text) |
+| `<leader>ib` | Toggle autofill for this buffer |
+| `<leader>is` | AI status |
+| `<leader>ic` | Toggle the Claude Code terminal |
+| `<M-l>` | Accept the Copilot suggestion (insert mode) |
+
+### AI: Copilot autofill and Claude Code
+
+Copilot suggests as you type and paints the suggestion as ghost text —
+`<M-l>` accepts it, `<M-w>` / `<M-j>` take just a word or a line, `<M-]>` /
+`<M-[>` cycle alternatives and `<C-]>` dismisses. `<Tab>` accepts too, once the
+completion menu is out of the way. Nothing happens until you sign in:
+
+```sh
+dot install nvm                   # Copilot's language server needs node 18+
+nvim +"Copilot auth" +qa          # sign in once, stored outside this repo
+```
+
+**Toggling.** Everything hangs off `<leader>i` (or `:AI`), and the choice is
+saved to `~/.local/state/nvim/dot-ai.json`, so it survives a restart without
+touching a tracked file:
+
+| Command | Key | Effect |
+|---|---|---|
+| `:AI` | `<leader>is` | Show what is on right now |
+| `:AI toggle` / `:AI on` / `:AI off` | `<leader>it` | Copilot on or off entirely — off means no requests leave the machine |
+| `:AI autofill` | `<leader>ia` | Keep Copilot attached but stop the ghost text; `<M-l>` still asks for a suggestion |
+| `:AI buffer` | `<leader>ib` | Override autofill for this buffer only (off → on → back to the global setting) |
+| `:AI claude` | — | Enable or disable the Claude Code integration (takes effect next launch) |
+
+lualine shows the state on the right: `󰚩` while autofilling, `󰚩 manual`,
+`󰚩 buf off` or `󰚩 off`. Clicking it toggles autofill. For a one-off session
+with no AI at all, start Neovim with `DOT_AI=0 nvim` — the saved state is left
+alone and neither plugin is even loaded.
+
+Copilot never attaches to `.env`, `.pem`, `.key`, `id_rsa`-style or
+`credentials`/`secrets` files, nor to commit-message buffers.
+
+**Claude Code.** `claudecode.nvim` runs the `claude` CLI in a split and speaks
+the same IDE protocol the official extensions use, so Claude sees your
+selection and its edits arrive as reviewable diffs. It is enabled by default
+once `dot install claude` has run, and lazy-loads on first use:
+
+| Key | Action |
+|---|---|
+| `<leader>ic` | Toggle the Claude Code terminal |
+| `<leader>if` | Focus it |
+| `<leader>ix` | Send the buffer (normal) or the selection (visual) as an `@` mention |
+| `<leader>im` | Pick the model |
+| `<leader>iy` / `<leader>in` | Accept / reject the diff Claude proposes |
 
 ### PHP / Laravel
 
