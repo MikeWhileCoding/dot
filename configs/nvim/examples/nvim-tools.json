@@ -1,0 +1,23 @@
+{
+  "//": "Copy to a project root as `.nvim-tools.json` (or run :ProjectToolsInit).",
+  "//runner": "local | docker | compose | sail | custom — where every tool runs",
+
+  "runner": "compose",
+  "service": "app",
+  "workdir": "/var/www/html",
+
+  "//container": "runner=docker: the `docker exec` target, e.g. myapp-php-1",
+  "//user": "optional: run as this user inside the container, e.g. www-data",
+  "//compose_file": "optional: passed to `docker compose -f`",
+  "//prefix": "runner=custom: argv placed in front of every command",
+  "//sail": "runner=sail: path to the sail binary (default vendor/bin/sail)",
+
+  "xdebug": { "port": 9003 },
+
+  "//tools": "per-tool overrides; any of the keys above plus cmd/args/enabled",
+  "tools": {
+    "phpstan": { "args": ["--memory-limit=1G"], "level": 6, "severity": "warn" },
+    "blade-formatter": { "runner": "local" },
+    "biome": { "service": "node", "workdir": "/app" }
+  }
+}

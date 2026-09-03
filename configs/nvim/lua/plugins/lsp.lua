@@ -14,6 +14,7 @@ return {
       ensure_installed = {
         "lua_ls", "bashls", "jsonls", "yamlls",
         "pyright", "ts_ls", "html", "cssls",
+        "intelephense",
       },
     },
   },
@@ -61,23 +62,95 @@ return {
         },
       })
 
-      vim.lsp.config("laravel_lsp", {
-        cmd = { "laravel-lsp" },
-        filetypes = { "php", "blade" },
-        root_dir = function(bufnr, on_dir)
-          local root = vim.fs.root(bufnr, "artisan")
+      -- Intelephense — the premium licence unlocks rename, code actions and
+      -- the smarter diagnostics. The key is read from (first hit wins):
+      --   $INTELEPHENSE_LICENCE_KEY / $INTELEPHENSE_LICENSE_KEY
+      --   ~/.config/intelephense/licence.txt
+      --   ~/intelephense/licence.txt          (Intelephense's own default)
+      -- Keep the key out of this repo; it is a secret.
+      local function intelephense_licence()
+        local env = vim.env.INTELEPHENSE_LICENCE_KEY or vim.env.INTELEPHENSE_LICENSE_KEY
+        if env and env ~= "" then return vim.trim(env) end
 
-          if root then
-            on_dir(root)
+        for _, path in ipairs({
+          vim.fn.expand("~/.config/intelephense/licence.txt"),
+          vim.fn.expand("~/intelephense/licence.txt"),
+        }) do
+          local fd = io.open(path, "r")
+          if fd then
+            local key = vim.trim(fd:read("*a") or "")
+            fd:close()
+            if key ~= "" then return key end
           end
-        end,
+        end
+      end
+
+      vim.lsp.config("intelephense", {
+        init_options = {
+          licenceKey  = intelephense_licence(),
+          storagePath = vim.fn.stdpath("cache") .. "/intelephense",
+        },
+        settings = {
+          intelephense = {
+            -- Laravel apps are large; the default 1MB cutoff skips files.
+            files = {
+              maxSize     = 5000000,
+              exclude     = {
+                "**/.git/**", "**/node_modules/**", "**/bower_components/**",
+                "**/vendor/**/{Tests,tests}/**", "**/.history/**",
+                "**/storage/framework/**", "**/bootstrap/cache/**",
+              },
+            },
+            -- Facades and dynamic model attributes resolve once
+            -- `composer require --dev barryvdh/laravel-ide-helper` has written
+            -- _ide_helper.php / _ide_helper_models.php into the project root —
+            -- Intelephense indexes them from there automatically.
+            stubs = {
+              "apache", "bcmath", "bz2", "calendar", "com_dotnet", "Core", "csv", "ctype",
+              "curl", "date", "dba", "dom", "enchant", "exif", "fileinfo", "filter", "fpm",
+              "ftp", "gd", "gettext", "gmp", "hash", "iconv", "imagick", "imap", "intl",
+              "json", "ldap", "libxml", "mbstring", "meta", "mysqli", "oci8", "odbc",
+              "openssl", "pcntl", "pcre", "PDO", "pdo_ibm", "pdo_mysql", "pdo_pgsql",
+              "pdo_sqlite", "pgsql", "Phar", "posix", "pspell", "readline", "redis",
+              "Reflection", "session", "shmop", "SimpleXML", "snmp", "soap", "sockets",
+              "sodium", "SPL", "sqlite3", "standard", "superglobals", "sysvmsg", "sysvsem",
+              "sysvshm", "tidy", "tokenizer", "xml", "xmlreader", "xmlrpc", "xmlwriter",
+              "xsl", "Zend OPcache", "zip", "zlib",
+            },
+            completion = {
+              -- Accepting a class from the completion menu writes its `use`
+              -- statement — the auto-import behaviour the premium licence adds.
+              insertUseDeclaration                    = true,
+              fullyQualifyGlobalConstantsAndFunctions = false,
+              triggerParameterHints                   = true,
+            },
+            -- Pint owns formatting (see plugins/tools.lua).
+            format = { enable = false },
+          },
+        },
       })
+
+      -- laravel-ls (the Laravel language server) — only when it is installed.
+      if vim.fn.executable("laravel-lsp") == 1 then
+        vim.lsp.config("laravel_lsp", {
+          cmd = { "laravel-lsp" },
+          filetypes = { "php", "blade" },
+          root_dir = function(bufnr, on_dir)
+            local root = vim.fs.root(bufnr, "artisan")
+
+            if root then
+              on_dir(root)
+            end
+          end,
+        })
+        vim.lsp.enable("laravel_lsp")
+      end
 
       -- Enable all servers mason-lspconfig ensures are installed
       vim.lsp.enable({
         "lua_ls", "bashls", "jsonls", "yamlls",
         "pyright", "ts_ls", "html", "cssls",
-        "laravel_lsp",
+        "intelephense",
       })
 
       -- Diagnostics appearance

@@ -22,6 +22,18 @@ map("n", "<leader>pv", function() require("oil").open() end, { desc = "Open file
 -- <C-p>       git files
 -- <leader>ps  grep prompt
 
+-- ── Laravel / PHP (wired in plugins/php.lua) ──────────────────────────
+-- <leader>ll  laravel picker      <leader>la  artisan
+-- <leader>lr  routes              <leader>lu  artisan hub
+-- <leader>lm  make                <leader>lt  code actions
+-- <C-g>       blade view finder   gf          follow route()/view()/config()
+-- <leader>li  import class (php)  :LaravelIdeHelper  regenerate model stubs
+--
+-- ── Debug / Xdebug (wired in plugins/php.lua) ─────────────────────────
+-- <leader>bb  breakpoint          <leader>bc / <F5>  continue
+-- <leader>bo  step over           <leader>bi  step into
+-- <leader>bt  toggle dap-ui       <leader>bx  terminate
+
 -- ── Split navigation (use <C-w> prefix — <C-h/n/s> reserved for harpoon) ──
 map("n", "<C-j>", "<C-w>j", { desc = "Move to lower split" })
 map("n", "<C-k>", "<C-w>k", { desc = "Move to upper split" })

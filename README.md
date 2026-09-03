@@ -189,7 +189,10 @@ The Neovim config in `configs/nvim/` is set up with [lazy.nvim](https://github.c
 | LSP | mason + nvim-lspconfig (nvim 0.11 native API) |
 | Completion | nvim-cmp + LuaSnip |
 | Syntax | nvim-treesitter + textobjects + context + rainbow-delimiters |
-| Formatting | conform.nvim |
+| Formatting | conform.nvim (pint, blade-formatter, biome, prettier, …) |
+| Linting | nvim-lint (phpstan/larastan, biome) |
+| PHP / Laravel | intelephense + [laravel.nvim](https://github.com/adalessa/laravel.nvim) |
+| Debugging | nvim-dap + dap-ui (Xdebug) |
 | Git | gitsigns + fugitive |
 | UI | lualine, indent-blankline, dressing, which-key |
 
@@ -211,6 +214,109 @@ The Neovim config in `configs/nvim/` is set up with [lazy.nvim](https://github.c
 | `gr` | References |
 | `<leader>rn` | Rename symbol |
 | `<leader>ca` | Code action |
+| `<leader>li` | Import class under cursor (PHP) |
+| `<leader>lf` | Format buffer |
+| `<leader>ln` | Lint buffer now |
+| `<leader>ll` | Laravel picker (artisan, routes, make, …) |
+| `<leader>la` | Artisan commands |
+| `<leader>lr` | Routes |
+| `<leader>lu` | Artisan hub (serve, pail, vite, …) |
+| `<C-g>` | Blade view finder |
+| `gf` | Follow `route()` / `view()` / `config()` / `Inertia::render()` |
+| `<leader>bb` | Toggle breakpoint |
+| `<leader>bc` / `<F5>` | Start / continue debugging |
+| `<leader>bt` | Toggle debug UI |
+
+### PHP / Laravel
+
+`configs/nvim/lua/plugins/php.lua` wires up [laravel.nvim](https://github.com/adalessa/laravel.nvim)
+(artisan, routes, model info, blade-aware `gf`, Tinker, completion for views/routes/config/env),
+Intelephense as the language server, treesitter `php`/`php_only`/`phpdoc`/`blade`, pint for
+formatting, phpstan/larastan for diagnostics and Xdebug through nvim-dap.
+
+One-time setup:
+
+```sh
+nvim +"MasonInstall intelephense php-debug-adapter" +qa
+npm i -g blade-formatter          # optional: blade template formatting
+```
+
+**Intelephense licence** — the premium key is read from the first of:
+`$INTELEPHENSE_LICENCE_KEY`, `~/.config/intelephense/licence.txt`,
+`~/intelephense/licence.txt`. Keep it out of this repo:
+
+```sh
+mkdir -p ~/.config/intelephense && printf '%s' 'YOUR-KEY' > ~/.config/intelephense/licence.txt
+```
+
+**Auto-importing** — with the licence, accepting a class from the completion
+menu writes its `use` statement (`completion.insertUseDeclaration`). For a
+symbol you already typed, `<leader>li` applies Intelephense's import code
+action directly.
+
+**Eloquent magic methods** — `Model::create(…)` / `Model::where(…)` are flagged
+as undefined until the stubs exist. `:LaravelIdeHelper` runs
+`ide-helper:generate`, `ide-helper:models --nowrite` and `ide-helper:meta`
+(through the project's runner, so it works in a container) and restarts
+Intelephense afterwards. Install the package first:
+
+```sh
+composer require --dev barryvdh/laravel-ide-helper
+```
+
+laravel.nvim also generates a typed `Builder<Model>` doc-block in `vendor/`
+(`eloquent_generate_doc_blocks`, on by default), which fixes most query chains.
+
+**Blade** — `@` directives complete from `lua/snippets/blade.lua`
+(`@foreach`, `@forelse`, `@props`, `@error`, …, with their closing tags);
+laravel.nvim completes view names, routes, config keys and env vars.
+
+### Running project tools in Docker
+
+pint, phpstan, artisan, biome and friends usually live *inside* a project's
+container. Drop a `.nvim-tools.json` in the project root (`:ProjectToolsInit`
+scaffolds one) and every integration — conform, nvim-lint, nvim-dap and
+laravel.nvim's artisan/composer/npm — runs its commands there and translates
+paths between host and container:
+
+```jsonc
+{
+  "runner": "compose",            // local | docker | compose | sail | custom
+  "service": "app",               // compose/sail service
+  "workdir": "/var/www/html",     // project root inside the container
+  "user": "www-data",             // optional
+  "compose_file": "docker-compose.dev.yml",
+  "xdebug": { "port": 9003 },
+  "tools": {
+    "phpstan": { "args": ["--memory-limit=1G"], "level": 6 },
+    "blade-formatter": { "runner": "local" },
+    "biome": { "service": "node", "workdir": "/app" }
+  }
+}
+```
+
+| Runner | Command it builds |
+|---|---|
+| `local` | `vendor/bin/pint …` |
+| `docker` | `docker exec -i -w <workdir> <container> vendor/bin/pint …` |
+| `compose` | `docker compose exec -T -w <workdir> <service> vendor/bin/pint …` |
+| `sail` | `vendor/bin/sail run vendor/bin/pint …` |
+| `custom` | `<prefix…> vendor/bin/pint …` |
+
+Every key can be overridden per tool, so a project whose front end lives in a
+different container than PHP just says so under `tools`. `.nvim-tools.local.json`
+is layered on top for machine-specific tweaks (handy when the shared file is
+committed). JS/TS/JSON/CSS use **biome** when the project has a `biome.json`
+(or a `tools.biome` entry) and fall back to prettier otherwise.
+
+| Command | What it does |
+|---|---|
+| `:ProjectTools` | Show the resolved command for every tool in this project |
+| `:ProjectToolsInit` | Create/open `.nvim-tools.json` |
+| `:ProjectToolsReload` | Re-read it (also automatic on save) |
+| `:LaravelIdeHelper` | Regenerate ide-helper stubs in that same environment |
+
+An annotated example lives in `configs/nvim/examples/nvim-tools.json`.
 
 ## Adding a module
 
