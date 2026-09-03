@@ -70,8 +70,14 @@ dot install <module>              Install a single module
 dot install --profile <name>      Install all modules in a profile
 dot update [<module>|all]         Update one module or everything
 dot status [<module>]             Show installed version / stamp
+dot config [<module>|all]         Re-apply config symlinks / settings
 dot list                          List all modules and profiles
 dot help                          Show help
+
+Per-project (run inside a project):
+dot project show                  Show where this project's tools run
+dot project init [--local]        Detect containers and write .nvim-tools.json
+dot project check                 Verify php/pint/phpstan/biome are reachable
 ```
 
 ### Examples
@@ -141,6 +147,7 @@ Everything installs into `~/.local`:
 | Module | Description |
 |---|---|
 | `zsh` | zsh itself + oh-my-zsh — installs both if missing, symlinks `configs/zshrc` → `~/.zshrc` |
+| `intelephense` | Intelephense PHP language server + guided premium licence setup |
 | `neovim` | Neovim nightly — pre-built binary + symlinks `configs/nvim/` |
 | `tmux` | tmux — built from source |
 | `fzf` | fzf — fuzzy finder |
@@ -237,17 +244,24 @@ formatting, phpstan/larastan for diagnostics and Xdebug through nvim-dap.
 One-time setup:
 
 ```sh
-nvim +"MasonInstall intelephense php-debug-adapter" +qa
+dot install intelephense          # language server + guided licence setup
+nvim +"MasonInstall php-debug-adapter" +qa
 npm i -g blade-formatter          # optional: blade template formatting
 ```
 
-**Intelephense licence** — the premium key is read from the first of:
-`$INTELEPHENSE_LICENCE_KEY`, `~/.config/intelephense/licence.txt`,
-`~/intelephense/licence.txt`. Keep it out of this repo:
+**Intelephense licence** — `dot install intelephense` explains what the premium
+licence adds, points at [intelephense.com](https://intelephense.com), then reads
+the key with hidden input and stores it in `~/.config/intelephense/licence.txt`
+(mode 600, never in this repo). Run it again any time with:
 
 ```sh
-mkdir -p ~/.config/intelephense && printf '%s' 'YOUR-KEY' > ~/.config/intelephense/licence.txt
+dot config intelephense           # add or replace the key
+dot status intelephense           # masked key + server version
 ```
+
+Neovim reads the key from `$INTELEPHENSE_LICENCE_KEY`,
+`~/.config/intelephense/licence.txt` or `~/intelephense/licence.txt`, in that
+order — so a key you already have keeps working.
 
 **Auto-importing** — with the licence, accepting a class from the completion
 menu writes its `use` statement (`completion.insertUseDeclaration`). For a
@@ -309,8 +323,27 @@ is layered on top for machine-specific tweaks (handy when the shared file is
 committed). JS/TS/JSON/CSS use **biome** when the project has a `biome.json`
 (or a `tools.biome` entry) and fall back to prettier otherwise.
 
+Rather than writing that file by hand, run `dot project init` in the project —
+it detects the setup and fills it in:
+
+```sh
+dot project init          # detect and write .nvim-tools.json
+dot project init --local  # machine-only override, offers to git-exclude it
+dot project show          # the exact command each tool will run
+dot project check         # run php/pint/phpstan/biome there and verify the workdir
+```
+
+Detection order: `vendor/bin/sail` → a **running container that bind-mounts this
+project** (preferring its compose service name over the container name, so a
+renamed container keeps working) → the compose file → local. `dot project check`
+is the one to run when something looks wrong: it executes each tool in the
+configured environment and confirms `workdir` really holds the project, which is
+what makes phpstan diagnostics and Xdebug breakpoints land on the right lines.
+
 | Command | What it does |
 |---|---|
+| `dot project init` | Detect containers and write `.nvim-tools.json` |
+| `dot project check` | Verify the tools and path mapping actually work |
 | `:ProjectTools` | Show the resolved command for every tool in this project |
 | `:ProjectToolsInit` | Create/open `.nvim-tools.json` |
 | `:ProjectToolsReload` | Re-read it (also automatic on save) |
