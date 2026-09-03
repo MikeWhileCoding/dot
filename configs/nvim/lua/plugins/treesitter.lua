@@ -1,18 +1,37 @@
--- treesitter.lua — syntax highlighting and text objects
+-- treesitter.lua — syntax highlighting and text objects (nvim-treesitter `main`)
+local ensure_installed = {
+  "bash", "blade", "c", "css", "dockerfile", "go", "html",
+  "javascript", "json", "lua", "markdown", "markdown_inline",
+  "php", "php_only", "phpdoc", "python", "rust", "sql",
+  "toml", "typescript", "vim", "vimdoc", "yaml",
+}
+
 return {
   {
     "nvim-treesitter/nvim-treesitter",
+    branch = "main",
+    lazy   = false, -- the `main` branch does not support lazy-loading
     build  = ":TSUpdate",
-    event  = { "BufReadPost", "BufNewFile" },
     config = function()
-      require("nvim-treesitter").setup({
-        ensure_installed = {
-          "bash", "c", "css", "dockerfile", "go", "html",
-          "javascript", "json", "lua", "markdown", "markdown_inline",
-          "python", "rust", "sql", "toml", "typescript", "vim",
-          "vimdoc", "yaml",
-        },
-        auto_install = true,
+      local ts = require("nvim-treesitter")
+      ts.setup({})
+
+      -- `main` has no ensure_installed/auto_install: install what is missing
+      -- ourselves, then turn highlighting on per filetype.
+      local installed = ts.get_installed("parsers")
+      local missing   = vim.tbl_filter(function(lang)
+        return not vim.tbl_contains(installed, lang)
+      end, ensure_installed)
+      if #missing > 0 then
+        ts.install(missing)
+      end
+
+      vim.api.nvim_create_autocmd("FileType", {
+        callback = function(ev)
+          -- Errors when no parser is installed for the filetype — harmless.
+          pcall(vim.treesitter.start, ev.buf)
+        end,
+        desc = "Start treesitter highlighting where a parser exists",
       })
     end,
   },
@@ -20,6 +39,7 @@ return {
   -- Text objects (af/if for functions, ac/ic for classes, ]f/[f to jump)
   {
     "nvim-treesitter/nvim-treesitter-textobjects",
+    branch       = "main",
     dependencies = { "nvim-treesitter/nvim-treesitter" },
     event        = { "BufReadPost", "BufNewFile" },
     config = function()

@@ -50,10 +50,15 @@ return {
         markdown   = { "prettier" },
         sh         = { "shfmt" },
       },
-      format_on_save = {
-        timeout_ms = 500,
-        lsp_format = "fallback",
-      },
+      -- PHP formatting can be a `docker exec` round-trip, so it gets a much
+      -- longer budget than a local formatter needs.
+      format_on_save = function(bufnr)
+        local ft = vim.bo[bufnr].filetype
+        if ft == "php" or ft == "blade" then
+          return { timeout_ms = 5000, lsp_format = "never" }
+        end
+        return { timeout_ms = 500, lsp_format = "fallback" }
+      end,
     },
   },
 
@@ -90,7 +95,8 @@ return {
       spec = {
         { "<leader>s", group = "search/telescope" },
         { "<leader>h", group = "harpoon" },
-        { "<leader>l", group = "lsp" },
+        { "<leader>l", group = "lsp/laravel" },
+        { "<leader>b", group = "debug" },
         { "<leader>g", group = "git" },
       },
     },
