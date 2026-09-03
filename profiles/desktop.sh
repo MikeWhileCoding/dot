@@ -6,6 +6,7 @@ PROFILE_DESC="Full workstation environment"
 
 PROFILE_MODULES=(
   zsh
+  tree-sitter
   neovim
   tmux
   fzf

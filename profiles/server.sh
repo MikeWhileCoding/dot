@@ -6,6 +6,7 @@ PROFILE_DESC="Lean server baseline"
 
 PROFILE_MODULES=(
   zsh
+  tree-sitter
   neovim
   tmux
   fzf

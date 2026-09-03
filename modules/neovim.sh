@@ -83,10 +83,14 @@ module_config() {
 }
 
 # Treesitter parsers and telescope-fzf-native are compiled on first launch,
-# so nvim is only fully functional with a working toolchain.
+# so nvim is only fully functional with a working toolchain. nvim-treesitter
+# (`main`) additionally needs the `tree-sitter` CLI (see modules/tree-sitter.sh).
 _nvim_check_build_tools() {
   ensure_build_tools "Neovim plugins (treesitter parsers, telescope-fzf-native)" \
     || warn "Neovim will install, but treesitter/fzf-native builds will fail until make and gcc are available"
+  if ! command -v tree-sitter >/dev/null 2>&1; then
+    warn "tree-sitter CLI not found — run 'dot install tree-sitter' or nvim-treesitter cannot build parsers"
+  fi
   return 0
 }
 
@@ -129,6 +133,12 @@ module_status() {
     info "Build tools: make + $(command -v cc || command -v gcc || command -v clang)"
   else
     warn "Build tools: make/gcc missing — treesitter parsers cannot compile"
+  fi
+
+  if command -v tree-sitter >/dev/null 2>&1; then
+    info "tree-sitter CLI: $(command -v tree-sitter)"
+  else
+    warn "tree-sitter CLI: missing (run 'dot install tree-sitter')"
   fi
 
   local dst="${HOME}/.config/nvim"
