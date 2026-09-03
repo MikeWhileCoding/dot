@@ -25,6 +25,10 @@
 -- `.nvim-tools.local.json` is merged on top of `.nvim-tools.json`, so a team can
 -- commit the shared setup while each machine overrides what it needs. Both are
 -- worth adding to the project's .gitignore / .git/info/exclude as you prefer.
+--
+-- `dot project init` writes this file for you: it finds Sail, or a running
+-- container that bind-mounts the project, or the compose file, and fills in the
+-- service and workdir. `dot project check` then proves the tools are reachable.
 
 local M = {}
 

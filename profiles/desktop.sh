@@ -13,6 +13,7 @@ PROFILE_MODULES=(
   delta
   gh
   nvm
+  intelephense
   uv
   posting
   claude

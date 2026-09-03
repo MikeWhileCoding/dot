@@ -7,6 +7,7 @@ DOT_REPO="${0:A:h}"
 
 # ── Load core library ─────────────────────────────────────────────────
 source "${DOT_REPO}/lib/core.sh"
+source "${DOT_REPO}/lib/project.sh"
 
 # ── Module helpers ─────────────────────────────────────────────────────
 
@@ -230,6 +231,11 @@ Commands:
   status [<module>]             Show installed version / stamp
   list                          List all modules and profiles
   help                          Show this help message
+
+Per-project (run inside a project):
+  project show                  Show where this project's tools run
+  project init [--local]        Detect containers and write .nvim-tools.json
+  project check                 Verify php/pint/phpstan/biome are reachable
 USAGE
 }
 
@@ -240,6 +246,7 @@ case "${1:-help}" in
   update)  shift; cmd_update  "$@" ;;
   config)  shift; cmd_config  "$@" ;;
   status)  shift; cmd_status  "$@" ;;
+  project) shift; cmd_project "$@" ;;
   list)    cmd_list              ;;
   help|*)  cmd_help              ;;
 esac
