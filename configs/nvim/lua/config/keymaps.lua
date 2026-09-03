@@ -34,6 +34,20 @@ map("n", "<leader>pv", function() require("oil").open() end, { desc = "Open file
 -- <leader>bo  step over           <leader>bi  step into
 -- <leader>bt  toggle dap-ui       <leader>bx  terminate
 
+-- ── AI: Copilot autofill + Claude Code (wired in lua/ai/init.lua and
+--        plugins/ai.lua; state persists across restarts) ───────────────
+-- <leader>it  toggle Copilot        <leader>ia  toggle autofill (ghost text)
+-- <leader>ib  toggle autofill here  <leader>is  status
+-- <leader>ip  Copilot panel         <leader>iA  Copilot sign in
+-- <leader>ic  Claude Code toggle    <leader>if  Claude Code focus
+-- <leader>ix  send buffer/selection <leader>im  pick Claude model
+-- <leader>iy / <leader>in  accept / reject a Claude diff
+-- :AI [status|on|off|toggle|autofill|buffer|claude]
+--
+-- Insert mode (Copilot): <M-l> accept  <M-w> word  <M-j> line
+--                        <M-]> / <M-[> cycle  <C-]> dismiss
+--                        <Tab> accepts too, once the cmp menu is closed
+
 -- ── Split navigation (use <C-w> prefix — <C-h/n/s> reserved for harpoon) ──
 map("n", "<C-j>", "<C-w>j", { desc = "Move to lower split" })
 map("n", "<C-k>", "<C-w>k", { desc = "Move to upper split" })

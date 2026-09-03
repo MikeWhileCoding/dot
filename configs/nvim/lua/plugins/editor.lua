@@ -98,6 +98,7 @@ return {
         { "<leader>l", group = "lsp/laravel" },
         { "<leader>b", group = "debug" },
         { "<leader>g", group = "git" },
+        { "<leader>i", group = "ai (copilot/claude)" },
       },
     },
   },

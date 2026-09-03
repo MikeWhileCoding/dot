@@ -23,6 +23,14 @@ return {
       local luasnip = require("luasnip")
       local lspkind = require("lspkind")
 
+      -- Copilot paints its suggestion as ghost text and hides while the cmp
+      -- menu is open, so <Tab> can serve both: the menu first, then a snippet
+      -- jump, then whatever Copilot is offering.
+      local function copilot_suggestion()
+        local ok, suggestion = pcall(require, "copilot.suggestion")
+        if ok and suggestion.is_visible() then return suggestion end
+      end
+
       cmp.setup({
         snippet = {
           expand = function(args)
@@ -42,6 +50,8 @@ return {
               cmp.select_next_item()
             elseif luasnip.expand_or_jumpable() then
               luasnip.expand_or_jump()
+            elseif copilot_suggestion() then
+              copilot_suggestion().accept()
             else
               fallback()
             end
