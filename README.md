@@ -214,6 +214,7 @@ The Neovim config in `configs/nvim/` is set up with [lazy.nvim](https://github.c
 | `gr` | References |
 | `<leader>rn` | Rename symbol |
 | `<leader>ca` | Code action |
+| `<leader>li` | Import class under cursor (PHP) |
 | `<leader>lf` | Format buffer |
 | `<leader>ln` | Lint buffer now |
 | `<leader>ll` | Laravel picker (artisan, routes, make, …) |
@@ -247,6 +248,28 @@ npm i -g blade-formatter          # optional: blade template formatting
 ```sh
 mkdir -p ~/.config/intelephense && printf '%s' 'YOUR-KEY' > ~/.config/intelephense/licence.txt
 ```
+
+**Auto-importing** — with the licence, accepting a class from the completion
+menu writes its `use` statement (`completion.insertUseDeclaration`). For a
+symbol you already typed, `<leader>li` applies Intelephense's import code
+action directly.
+
+**Eloquent magic methods** — `Model::create(…)` / `Model::where(…)` are flagged
+as undefined until the stubs exist. `:LaravelIdeHelper` runs
+`ide-helper:generate`, `ide-helper:models --nowrite` and `ide-helper:meta`
+(through the project's runner, so it works in a container) and restarts
+Intelephense afterwards. Install the package first:
+
+```sh
+composer require --dev barryvdh/laravel-ide-helper
+```
+
+laravel.nvim also generates a typed `Builder<Model>` doc-block in `vendor/`
+(`eloquent_generate_doc_blocks`, on by default), which fixes most query chains.
+
+**Blade** — `@` directives complete from `lua/snippets/blade.lua`
+(`@foreach`, `@forelse`, `@props`, `@error`, …, with their closing tags);
+laravel.nvim completes view names, routes, config keys and env vars.
 
 ### Running project tools in Docker
 
@@ -291,6 +314,7 @@ committed). JS/TS/JSON/CSS use **biome** when the project has a `biome.json`
 | `:ProjectTools` | Show the resolved command for every tool in this project |
 | `:ProjectToolsInit` | Create/open `.nvim-tools.json` |
 | `:ProjectToolsReload` | Re-read it (also automatic on save) |
+| `:LaravelIdeHelper` | Regenerate ide-helper stubs in that same environment |
 
 An annotated example lives in `configs/nvim/examples/nvim-tools.json`.
 

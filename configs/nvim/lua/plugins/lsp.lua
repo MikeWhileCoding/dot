@@ -117,7 +117,14 @@ return {
               "sysvshm", "tidy", "tokenizer", "xml", "xmlreader", "xmlrpc", "xmlwriter",
               "xsl", "Zend OPcache", "zip", "zlib",
             },
-            -- Pint owns formatting (see plugins/php.lua).
+            completion = {
+              -- Accepting a class from the completion menu writes its `use`
+              -- statement — the auto-import behaviour the premium licence adds.
+              insertUseDeclaration                    = true,
+              fullyQualifyGlobalConstantsAndFunctions = false,
+              triggerParameterHints                   = true,
+            },
+            -- Pint owns formatting (see plugins/tools.lua).
             format = { enable = false },
           },
         },

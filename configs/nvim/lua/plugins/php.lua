@@ -15,6 +15,48 @@ return {
     },
     ft    = { "php", "blade" },
     event = { "BufEnter composer.json" },
+    -- init runs at startup, so the command exists before the plugin loads.
+    init  = function()
+      vim.api.nvim_create_user_command("LaravelIdeHelper", function()
+        local rn   = require("project.runner")
+        local spec = rn.command("artisan", 0)
+        if not spec then
+          vim.notify("[laravel] no artisan runner for this project", vim.log.levels.ERROR)
+          return
+        end
+
+        -- barryvdh/laravel-ide-helper writes the stubs that teach Intelephense
+        -- about facades and Eloquent magic methods (Model::create, ::where, …).
+        local steps = {
+          { "ide-helper:generate" },
+          { "ide-helper:models", "--nowrite" },
+          { "ide-helper:meta" },
+        }
+
+        local function run(index)
+          local step = steps[index]
+          if not step then
+            vim.notify("[laravel] ide-helper stubs regenerated", vim.log.levels.INFO)
+            pcall(vim.cmd, "LspRestart intelephense")
+            return
+          end
+          local argv = vim.list_extend(vim.deepcopy(spec.argv), step)
+          vim.notify("[laravel] " .. table.concat(step, " "), vim.log.levels.INFO)
+          vim.system(argv, { cwd = spec.cwd, text = true }, function(out)
+            vim.schedule(function()
+              if out.code ~= 0 then
+                vim.notify("[laravel] " .. table.concat(step, " ") .. " failed:\n"
+                  .. (out.stderr ~= "" and out.stderr or out.stdout), vim.log.levels.ERROR)
+                return
+              end
+              run(index + 1)
+            end)
+          end)
+        end
+
+        run(1)
+      end, { desc = "Regenerate laravel-ide-helper stubs (facades, models, meta)" })
+    end,
     keys  = {
       { "<leader>ll", function() Laravel.pickers.laravel() end,              desc = "Laravel: picker" },
       { "<leader>la", function() Laravel.pickers.artisan() end,              desc = "Laravel: artisan" },
@@ -64,6 +106,11 @@ return {
     end,
     config = function(_, opts)
       require("laravel").setup(opts)
+
+      -- `@directive` completion for blade (friendly-snippets only ships
+      -- `b:`-prefixed ones).
+      pcall(require, "luasnip")
+      pcall(require, "snippets.blade")
 
       -- laravel.nvim registers a cmp source named "laravel" (views, routes,
       -- config keys, env vars, model columns) — enable it for PHP buffers.

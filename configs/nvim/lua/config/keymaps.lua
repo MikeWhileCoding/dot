@@ -27,6 +27,7 @@ map("n", "<leader>pv", function() require("oil").open() end, { desc = "Open file
 -- <leader>lr  routes              <leader>lu  artisan hub
 -- <leader>lm  make                <leader>lt  code actions
 -- <C-g>       blade view finder   gf          follow route()/view()/config()
+-- <leader>li  import class (php)  :LaravelIdeHelper  regenerate model stubs
 --
 -- ── Debug / Xdebug (wired in plugins/php.lua) ─────────────────────────
 -- <leader>bb  breakpoint          <leader>bc / <F5>  continue
