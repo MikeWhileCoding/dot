@@ -7,6 +7,27 @@ MODULE_DESC="claude — Anthropic's Claude Code CLI with powerline statusline"
 _claude_npm_pkg="@anthropic-ai/claude-code"
 _claude_registry_url="https://registry.npmjs.org/@anthropic-ai%2Fclaude-code/latest"
 
+# `claude install` migrates from the npm shim to the native build: it stores
+# the binary under ~/.local/share/claude/versions/<v> and points
+# ~/.local/bin/claude at it. npm refuses to overwrite that symlink (EEXIST),
+# so once the native build is in place updates must go through `claude update`.
+_claude_is_native() {
+  [[ -L "${DOT_BIN}/claude" ]] || return 1
+  local target
+  target="$(readlink "${DOT_BIN}/claude")"
+  [[ "$target" == */share/claude/versions/* ]]
+}
+
+_claude_local_version() {
+  "${DOT_BIN}/claude" --version 2>/dev/null | awk '{print $1}'
+}
+
+_claude_remote_version() {
+  # The registry's /latest endpoint sends no ETag, so compare versions instead.
+  curl -fsSL "$_claude_registry_url" 2>/dev/null \
+    | sed -n 's/.*"version":"\([^"]*\)".*/\1/p'
+}
+
 _claude_require_npm() {
   # Try to activate nvm if npm isn't already in PATH
   if ! command -v npm &>/dev/null; then
@@ -63,18 +84,25 @@ _claude_install_from_npm() {
     return 1
   }
 
-  local etag
-  etag="$(remote_etag "$_claude_registry_url")"
-  [[ -n "$etag" ]] && write_stamp "$MODULE_NAME" "$etag"
-
-  info "Running claude install..."
+  info "Running claude install (switching to the native build)..."
   "${DOT_BIN}/claude" install || { error "claude install failed"; return 1; }
 
   _claude_configure_statusline
 
   local version
-  version="$("${DOT_BIN}/claude" --version 2>/dev/null)"
+  version="$(_claude_local_version)"
+  [[ -n "$version" ]] && write_stamp "$MODULE_NAME" "$version"
   success "claude ${version} installed to ${DOT_BIN}/claude"
+}
+
+_claude_update_native() {
+  info "Running claude update..."
+  "${DOT_BIN}/claude" update || { error "claude update failed"; return 1; }
+
+  local version
+  version="$(_claude_local_version)"
+  [[ -n "$version" ]] && write_stamp "$MODULE_NAME" "$version"
+  success "claude ${version} is installed"
 }
 
 module_install() {
@@ -86,22 +114,37 @@ module_install() {
 }
 
 module_update() {
-  if needs_update "$MODULE_NAME" "$_claude_registry_url" "${DOT_BIN}/claude"; then
-    info "Update available for claude"
+  if [[ ! -x "${DOT_BIN}/claude" ]]; then
     _claude_install_from_npm
+    return
+  fi
+
+  local local_version remote_version
+  local_version="$(_claude_local_version)"
+  remote_version="$(_claude_remote_version)"
+
+  if [[ -n "$remote_version" && "$local_version" == "$remote_version" ]]; then
+    success "claude ${local_version} is already up to date"
+    write_stamp "$MODULE_NAME" "$local_version"
+  elif _claude_is_native; then
+    [[ -n "$remote_version" ]] && info "Update available for claude: ${local_version} -> ${remote_version}"
+    _claude_update_native || return 1
   else
-    success "claude is already up to date"
+    [[ -n "$remote_version" ]] && info "Update available for claude: ${local_version} -> ${remote_version}"
+    _claude_install_from_npm || return 1
   fi
   _claude_configure_statusline
 }
 
 module_status() {
   if [[ -x "${DOT_BIN}/claude" ]]; then
-    local version stamp
-    version="$("${DOT_BIN}/claude" --version 2>/dev/null)"
-    stamp="$(read_stamp "$MODULE_NAME")"
-    info "claude: ${version}"
-    [[ -n "$stamp" ]] && info "ETag stamp: ${stamp}"
+    local version
+    version="$(_claude_local_version)"
+    if _claude_is_native; then
+      info "claude: ${version} (native build, self-updating)"
+    else
+      info "claude: ${version} (npm shim — 'dot update claude' will switch to the native build)"
+    fi
 
     local settings="${HOME}/.claude/settings.json"
     if [[ -f "$settings" ]] && grep -q 'claude-powerline' "$settings" 2>/dev/null; then
