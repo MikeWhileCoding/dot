@@ -62,13 +62,74 @@ return {
     },
   },
 
-  -- Comment: toggle comments
+  -- Comments: toggle comments
   {
-    "numToStr/Comment.nvim",
+    "OliverHeffernan/comments.nvim",
     keys = {
-      { "gc", mode = { "n", "v" }, desc = "Toggle comment" },
+      { "<C-/>", "<cmd>DotComment<cr>",       mode = "n", desc = "Toggle comment" },
+      { "<C-/>", ":DotComment<cr>",           mode = "x", desc = "Toggle comment" },
+      { "<C-/>", "<Esc><cmd>DotComment<cr>i", mode = "i", desc = "Toggle comment" },
+      { "<C-_>", "<cmd>DotComment<cr>",       mode = "n", desc = "Toggle comment" },
+      { "<C-_>", ":DotComment<cr>",           mode = "x", desc = "Toggle comment" },
+      { "<C-_>", "<Esc><cmd>DotComment<cr>i", mode = "i", desc = "Toggle comment" },
     },
-    opts = {},
+    config = function()
+      local comments = require("comments")
+
+      local function plugin_comment(opts)
+        local range = opts.range == 0 and "" or ("%d,%d"):format(opts.line1, opts.line2)
+        vim.cmd(range .. "Comment")
+      end
+
+      local vue_markers = {
+        template_element = { "<!--", "-->" },
+        script_element   = { "//", "" },
+        style_element    = { "/*", "*/" },
+      }
+
+      vim.api.nvim_create_user_command("DotComment", function(opts)
+        if vim.bo.filetype ~= "vue" then
+          plugin_comment(opts)
+          return
+        end
+
+        local ok, parser = pcall(vim.treesitter.get_parser, 0, "vue")
+        local trees = ok and parser:parse() or nil
+        if not trees or not trees[1] then
+          plugin_comment(opts)
+          return
+        end
+
+        local root = trees[1]:root()
+        local cursor = vim.api.nvim_win_get_cursor(0)
+        for line_number = opts.line1, opts.line2 do
+          local line = vim.api.nvim_buf_get_lines(0, line_number - 1, line_number, false)[1]
+          local column = math.max((line:find("%S") or 1) - 1, 0)
+          local node = root:named_descendant_for_range(line_number - 1, column, line_number - 1, column)
+          local markers
+
+          while node and not markers do
+            markers = vue_markers[node:type()]
+            node = node:parent()
+          end
+
+          if markers then
+            local indent, text = line:match("^(%s*)(.*)$")
+            if vim.startswith(text, markers[1]) and (markers[2] == "" or text:sub(-#markers[2]) == markers[2]) then
+              local finish = markers[2] == "" and nil or -#markers[2] - 1
+              text = text:sub(#markers[1] + 1, finish)
+            else
+              text = markers[1] .. text .. markers[2]
+            end
+            vim.api.nvim_buf_set_lines(0, line_number - 1, line_number, false, { indent .. text })
+          else
+            vim.api.nvim_win_set_cursor(0, { line_number, 0 })
+            comments.comment_based_on_context()
+          end
+        end
+        vim.api.nvim_win_set_cursor(0, cursor)
+      end, { range = true })
+    end,
   },
 
   -- Auto pairs

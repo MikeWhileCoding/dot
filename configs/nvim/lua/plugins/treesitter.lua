@@ -3,7 +3,7 @@ local ensure_installed = {
   "bash", "blade", "c", "css", "dockerfile", "go", "html",
   "javascript", "json", "lua", "markdown", "markdown_inline",
   "php", "php_only", "phpdoc", "python", "rust", "sql",
-  "toml", "typescript", "vim", "vimdoc", "yaml",
+  "toml", "typescript", "vim", "vimdoc", "vue", "yaml",
 }
 
 return {
