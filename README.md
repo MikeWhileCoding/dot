@@ -154,6 +154,7 @@ Everything installs into `~/.local`:
 | `ripgrep` | ripgrep — fast grep |
 | `delta` | delta — git diff pager |
 | `gh` | GitHub CLI |
+| `lazygit` | lazygit — git TUI + symlinks `configs/lazygit.yml` |
 | `nvm` | Node Version Manager |
 | `uv` | uv — Python package/project manager |
 | `posting` | posting — TUI HTTP client |
@@ -164,7 +165,7 @@ Everything installs into `~/.local`:
 
 | Profile | Modules | Description |
 |---|---|---|
-| `desktop` | zsh, neovim, tmux, fzf, ripgrep, delta, gh, nvm, uv, posting, claude | Full workstation |
+| `desktop` | zsh, neovim, tmux, fzf, ripgrep, delta, gh, lazygit, nvm, uv, posting, claude | Full workstation |
 | `server` | zsh, neovim, tmux, fzf, ripgrep, delta | Lean baseline |
 
 ## Shell config (oh-my-zsh)
