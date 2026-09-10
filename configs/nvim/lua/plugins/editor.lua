@@ -40,15 +40,18 @@ return {
     },
     opts = {
       formatters_by_ft = {
-        lua        = { "stylua" },
-        go         = { "gofmt" },
-        python     = { "black" },
-        javascript = { "prettier" },
-        typescript = { "prettier" },
-        json       = { "prettier" },
-        yaml       = { "prettier" },
-        markdown   = { "prettier" },
-        sh         = { "shfmt" },
+        lua              = { "stylua" },
+        go               = { "gofmt" },
+        python           = { "black" },
+        javascript       = { "prettier" },
+        typescript       = { "prettier" },
+        json             = { "prettier" },
+        yaml             = { "prettier" },
+        -- Markdown: prettier reformats the file, marksman (plugins/lsp.lua)
+        -- supplies the link/heading intelligence. Both come from Mason.
+        markdown         = { "prettier" },
+        ["markdown.mdx"] = { "prettier" },
+        sh               = { "shfmt" },
       },
       -- PHP formatting can be a `docker exec` round-trip, so it gets a much
       -- longer budget than a local formatter needs.

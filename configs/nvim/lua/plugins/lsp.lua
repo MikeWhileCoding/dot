@@ -4,7 +4,32 @@ return {
   {
     "williamboman/mason.nvim",
     cmd  = "Mason",
-    opts = { ui = { border = "rounded" } },
+    opts = {
+      ui = { border = "rounded" },
+      -- Formatters/linters, which mason-lspconfig's ensure_installed does not
+      -- cover — it only knows about language servers.
+      ensure_installed = { "prettier" },
+    },
+    config = function(_, opts)
+      local settings = vim.deepcopy(opts)
+      local tools    = settings.ensure_installed or {}
+      settings.ensure_installed = nil -- not a mason setting; installed below
+      require("mason").setup(settings)
+
+      -- Install the missing ones in the background; refresh() first so a stale
+      -- registry cache does not make get_package() miss a known tool. Skipped
+      -- under `nvim --headless` (as mason-lspconfig does for servers) — a
+      -- script would exit mid-download and abort the install.
+      if #vim.api.nvim_list_uis() == 0 then return end
+
+      local registry = require("mason-registry")
+      registry.refresh(function()
+        for _, name in ipairs(tools) do
+          local ok, pkg = pcall(registry.get_package, name)
+          if ok and not pkg:is_installed() then pkg:install() end
+        end
+      end)
+    end,
   },
 
   {
@@ -14,7 +39,7 @@ return {
       ensure_installed = {
         "lua_ls", "bashls", "jsonls", "yamlls",
         "pyright", "ts_ls", "html", "cssls",
-        "intelephense",
+        "intelephense", "marksman",
       },
     },
   },
@@ -63,6 +88,15 @@ return {
             diagnostics = { globals = { "vim" } },
           },
         },
+      })
+
+      -- marksman (markdown) — link/heading completion, go-to-definition across
+      -- notes, rename that rewrites references, workspace symbols.
+      -- It is a .NET binary and refuses to start when the system has no libicu
+      -- (WSL, Alpine, slim images). Invariant globalization drops that
+      -- dependency; markdown needs no culture-aware collation.
+      vim.lsp.config("marksman", {
+        cmd_env = { DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "1" },
       })
 
       -- Intelephense — the premium licence unlocks rename, code actions and
@@ -153,7 +187,7 @@ return {
       vim.lsp.enable({
         "lua_ls", "bashls", "jsonls", "yamlls",
         "pyright", "ts_ls", "html", "cssls",
-        "intelephense",
+        "intelephense", "marksman",
       })
 
       -- Diagnostics appearance

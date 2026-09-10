@@ -214,6 +214,7 @@ The Neovim config in `configs/nvim/` is set up with [lazy.nvim](https://github.c
 | Formatting | conform.nvim (pint, blade-formatter, biome, prettier, …) |
 | Linting | nvim-lint (phpstan/larastan, biome) |
 | PHP / Laravel | intelephense + [laravel.nvim](https://github.com/adalessa/laravel.nvim) |
+| Markdown | [marksman](https://github.com/artempyanykh/marksman) LSP + prettier |
 | Debugging | nvim-dap + dap-ui (Xdebug) |
 | Git | gitsigns + fugitive |
 | AI | [copilot.lua](https://github.com/zbirenbaum/copilot.lua) inline autofill + optional [claudecode.nvim](https://github.com/coder/claudecode.nvim) |
