@@ -23,3 +23,37 @@ gui:
       - "#d8647e"
     defaultFgColor:
       - "#cdcdcd"
+
+# Pre-commit hooks (biome / lint-staged / pre-commit) run as part of the commit,
+# and lazygit's commit popup shows only a truncated tail of what they printed.
+# lazygit has no "on failure" hook, so instead these run the commit in the real
+# terminal — the hook prints in full, and on failure we drop straight into a
+# shell with the index still staged, so the problem can be fixed on the spot.
+customCommands:
+  # Overrides the built-in `C` (commitChangesWithEditor), which does the same
+  # thing minus the shell fallback. Plain `c` is untouched.
+  - key: "C"
+    context: "files"
+    description: "Commit in terminal (shell on hook failure)"
+    command: |
+      git commit || {
+        echo
+        echo "── commit failed — opening a shell, type exit to return to lazygit ──"
+        echo
+        "${SHELL:-sh}"
+      }
+    output: terminal
+
+  # Run the hook without writing a commit message first.
+  # `git hook run` honours core.hooksPath, so husky projects work too.
+  - key: "#"
+    context: "files"
+    description: "Run the pre-commit hook now"
+    command: "git hook run pre-commit"
+    output: terminal
+
+  - key: "!"
+    context: "global"
+    description: "Open a shell in the repo root"
+    command: "${SHELL:-sh}"
+    output: terminal

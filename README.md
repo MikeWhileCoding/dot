@@ -168,6 +168,20 @@ Everything installs into `~/.local`:
 | `desktop` | zsh, neovim, tmux, fzf, ripgrep, delta, gh, lazygit, nvm, uv, posting, claude | Full workstation |
 | `server` | zsh, neovim, tmux, fzf, ripgrep, delta | Lean baseline |
 
+## lazygit config
+
+`configs/lazygit.yml` holds the theme plus three custom commands aimed at
+pre-commit hooks (biome, lint-staged, `pre-commit`), whose output lazygit's
+commit popup truncates:
+
+| Key | Where | What |
+|---|---|---|
+| `C` | files | Commit in the terminal; **drops into a shell if the commit fails**, index still staged. Overrides the built-in `commitChangesWithEditor`. |
+| `#` | files | Run the pre-commit hook now, without writing a message first (`git hook run pre-commit`, so `core.hooksPath`/husky works). |
+| `!` | anywhere | Open a shell in the repo root; `exit` returns to lazygit. |
+
+Plain `c` is unchanged, and `w` still commits without hooks.
+
 ## Shell config (oh-my-zsh)
 
 `dot install zsh` clones [oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh) into `~/.local/opt/oh-my-zsh` and symlinks `configs/zshrc` → `~/.zshrc`. An existing unmanaged `~/.zshrc` is backed up to `~/.zshrc.bak` first.
