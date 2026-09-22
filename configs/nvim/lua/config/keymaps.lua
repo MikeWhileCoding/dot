@@ -44,9 +44,26 @@ map("n", "<leader>pv", function() require("oil").open() end, { desc = "Open file
 -- <leader>iy / <leader>in  accept / reject a Claude diff
 -- :AI [status|on|off|toggle|autofill|buffer|claude]
 --
+-- ── GitHub: octo.nvim (wired in plugins/github.lua) ───────────────────
+-- <leader>oo  every Octo command   <leader>oi / <leader>op  issues / PRs
+-- <leader>oI / <leader>oP  new issue / PR    <leader>oc  check out a PR
+-- <leader>od  PR changed files     <leader>ok  PR checks
+-- <leader>on  notifications        <leader>ob  repo in browser
+-- <leader>ot / <leader>oT  resolve / unresolve thread
+-- Prompted (input modal): <leader>os  search   <leader>og  number/URL
+--                         <leader>of  filtered list   <leader>oR  other repo
+-- <leader>or…  review (start/resume/submit/discard/comments/commit,
+--              t thread at cursor, a toggle the auto thread panel)
+-- <leader>oa…  add (comment/suggestion/label/assignee/reviewer)
+-- In octo buffers: ]c / [c comments, ]t / [t threads, ]q / [q changed files,
+--                  ]u / [u unviewed files, q dismisses a thread panel
+-- Inside an octo buffer, octo's own <localleader> (\) maps apply.
+--
 -- Insert mode (Copilot): <M-l> accept  <M-w> word  <M-j> line
 --                        <M-]> / <M-[> cycle  <C-]> dismiss
 --                        <Tab> accepts too, once the cmp menu is closed
+-- Disable <C-j> in insert mode (conflicts with Copilot workflows)
+map("i", "<C-j>", "<nop>")
 
 -- ── Split navigation (use <C-w> prefix — <C-h/n/s> reserved for harpoon) ──
 map("n", "<C-j>", "<C-w>j", { desc = "Move to lower split" })
