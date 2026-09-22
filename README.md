@@ -217,6 +217,7 @@ The Neovim config in `configs/nvim/` is set up with [lazy.nvim](https://github.c
 | Markdown | [marksman](https://github.com/artempyanykh/marksman) LSP + prettier |
 | Debugging | nvim-dap + dap-ui (Xdebug) |
 | Git | gitsigns + fugitive |
+| GitHub | [octo.nvim](https://github.com/pwntester/octo.nvim) — issues, PRs and reviews (needs `gh`) |
 | AI | [copilot.lua](https://github.com/zbirenbaum/copilot.lua) inline autofill + optional [claudecode.nvim](https://github.com/coder/claudecode.nvim) |
 | UI | lualine, indent-blankline, dressing, which-key |
 
@@ -256,6 +257,10 @@ The Neovim config in `configs/nvim/` is set up with [lazy.nvim](https://github.c
 | `<leader>is` | AI status |
 | `<leader>ic` | Toggle the Claude Code terminal |
 | `<M-l>` | Accept the Copilot suggestion (insert mode) |
+| `<leader>oo` | Every Octo (GitHub) command, in the picker |
+| `<leader>oi` / `<leader>op` | GitHub issues / pull requests |
+| `<leader>os` | Search GitHub (prompt) |
+| `<leader>og` | Open an issue/PR by number or URL (prompt) |
 
 ### AI: Copilot autofill and Claude Code
 
@@ -301,6 +306,71 @@ once `dot install claude` has run, and lazy-loads on first use:
 | `<leader>ix` | Send the buffer (normal) or the selection (visual) as an `@` mention |
 | `<leader>im` | Pick the model |
 | `<leader>iy` / `<leader>in` | Accept / reject the diff Claude proposes |
+
+### GitHub: issues, PRs and reviews
+
+[octo.nvim](https://github.com/pwntester/octo.nvim) opens issues, pull requests
+and code reviews as ordinary buffers, talking to GitHub through the `gh` CLI:
+
+```sh
+dot install gh                    # the CLI octo drives
+gh auth login                     # once per machine
+gh auth refresh -s read:project   # only for `Octo card …` (Projects v2)
+```
+
+Everything hangs off `<leader>o`, so the which-key popup *is* the command list:
+press `<leader>o` and read what is on offer. `<leader>oo` goes further and drops
+every Octo command into the telescope picker.
+
+| Key | Action |
+|---|---|
+| `<leader>oo` | Every Octo command, in the picker |
+| `<leader>oi` / `<leader>oI` | List issues / new issue |
+| `<leader>op` / `<leader>oP` | List pull requests / new PR |
+| `<leader>oc` | Check out a PR |
+| `<leader>od` / `<leader>ok` | PR changed files / CI checks |
+| `<leader>on` | Notifications |
+| `<leader>ot` / `<leader>oT` | Resolve / unresolve a review thread |
+| `<leader>ob` | Open the repo in the browser |
+| `<leader>or…` | Review: `s` start, `r` resume, `x` submit, `d` discard, `c` pending comments, `m` pick commit, `t` thread at cursor, `a` toggle the auto thread panel |
+| `<leader>oa…` | Add to the current issue/PR: `c` comment, `s` suggestion, `l` label, `a` assignee, `v` reviewer |
+
+Four of them take an argument, asked for in a dressing input modal:
+
+| Key | Prompt | Runs |
+|---|---|---|
+| `<leader>os` | `GitHub search >` | `Octo search <query>` — full GitHub syntax, e.g. `is:pr author:@me state:open` |
+| `<leader>og` | `Issue / PR >` | `Octo <number>` or `Octo <url>` — opens whichever issue, PR or discussion it names |
+| `<leader>of` | pick issues/PRs, then filters | `Octo issue list state=open …` |
+| `<leader>oR` | `owner/repo >` | `Octo repo view <repo>` |
+
+Inside an octo buffer the plugin's own `<localleader>` (`\`) mappings take
+over — `\ca` comments, `\cr` replies, `\la` labels, `\aa` assigns, `\va`
+requests a reviewer, `\po` checks the PR out, `\vs` starts (and, in a review,
+submits) a review, `\rt` resolves a thread, `<C-b>` opens it in the browser and
+`<C-y>` copies its URL. In a review diff, `\ca` and `\sa` leave a comment or a
+suggestion on the selected lines, `]t` / `[t` walk the threads, `]q` / `[q` walk
+the changed files and `\e` / `\b` focus and toggle the file panel. `<CR>` on an
+issue, PR or repo buffer shows the options menu for it.
+
+**Comment threads while reviewing.** In a review diff the thread for the line
+under the cursor opens in the other split by itself and disappears again when
+you move off it; `q` inside a thread dismisses it, `<leader>ort` opens the
+thread at the cursor and jumps into it, and `<leader>ora` turns the automatic
+panel on and off. That toggle works because this config owns the `CursorMoved`
+autocmd rather than octo, which only registers its own at startup and so could
+not be switched without a restart. Comment signs and virtual text (count and
+date) mark the commented lines in the diff.
+
+To move between comments: `]c` / `[c` walk the comments in an issue or PR
+buffer, `]t` / `[t` walk the threads in the current file of a review diff,
+`]q` / `[q` walk the changed files and `]u` / `[u` the unviewed ones.
+`<leader>orc` lists the review's pending comments in the picker.
+
+Two octo defaults are remapped in `plugins/github.lua` because they collide
+with bindings used everywhere else: approving a PR is `\pa` (not `<leader>qa`,
+which would stall `<leader>q`) and copying a commit SHA is `\gs` (not `<C-e>`,
+which is the harpoon menu).
 
 ### PHP / Laravel
 
