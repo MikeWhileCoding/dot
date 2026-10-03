@@ -7,6 +7,7 @@ MODULE_DESC="zsh — the shell dot runs on, plus oh-my-zsh and ~/.zshrc"
 _zsh_repo="zsh-users/zsh"
 _zsh_fallback_version="5.9"
 _zsh_omz_repo="https://github.com/ohmyzsh/ohmyzsh.git"
+_zsh_p10k_repo="https://github.com/romkatv/powerlevel10k.git"
 
 _zsh_bin() {
   if [[ -x "${DOT_BIN}/zsh" ]]; then
@@ -136,6 +137,50 @@ _zsh_update_omz() {
   return 0
 }
 
+_zsh_p10k_dir() {
+  echo "$(_zsh_omz_dir)/custom/themes/powerlevel10k"
+}
+
+# configs/zshrc sets ZSH_THEME="powerlevel10k/powerlevel10k", which oh-my-zsh
+# resolves under $ZSH/custom/themes — so the theme has to live there.
+_zsh_install_p10k() {
+  local p10k_dir
+  p10k_dir="$(_zsh_p10k_dir)"
+
+  if [[ -d "${p10k_dir}/.git" ]]; then
+    info "powerlevel10k already installed at ${p10k_dir}"
+    return 0
+  fi
+
+  if ! command -v git &>/dev/null; then
+    error "git is required to install powerlevel10k — run 'dot init'"
+    return 1
+  fi
+
+  info "Cloning powerlevel10k into ${p10k_dir}..."
+  rm -rf "$p10k_dir"
+  mkdir -p "${p10k_dir:h}"
+  git clone --depth=1 --quiet "$_zsh_p10k_repo" "$p10k_dir" \
+    || { error "powerlevel10k clone failed"; return 1; }
+
+  success "powerlevel10k theme installed"
+}
+
+_zsh_update_p10k() {
+  local p10k_dir
+  p10k_dir="$(_zsh_p10k_dir)"
+
+  if [[ ! -d "${p10k_dir}/.git" ]]; then
+    _zsh_install_p10k
+    return $?
+  fi
+
+  info "Updating powerlevel10k..."
+  git -C "$p10k_dir" pull --ff-only --quiet 2>/dev/null \
+    || warn "powerlevel10k update failed — leaving the current checkout in place"
+  return 0
+}
+
 # Symlinks configs/zshrc → ~/.zshrc, which is what carries the plugin list
 _zsh_link_zshrc() {
   local src="${DOT_REPO}/configs/zshrc"
@@ -183,6 +228,8 @@ module_config() {
   ensure_path_entry
   if [[ ! -d "$(_zsh_omz_dir)/.git" ]]; then
     warn "oh-my-zsh is not installed — run 'dot install zsh'"
+  elif [[ ! -d "$(_zsh_p10k_dir)/.git" ]]; then
+    warn "powerlevel10k theme is not installed — run 'dot install zsh'"
   fi
   _zsh_suggest_default_shell
 }
@@ -190,6 +237,7 @@ module_config() {
 module_install() {
   _zsh_install_binary || return 1
   _zsh_install_omz    || return 1
+  _zsh_install_p10k   || return 1
   _zsh_link_zshrc
   ensure_path_entry
 
@@ -211,6 +259,7 @@ module_update() {
   fi
 
   _zsh_update_omz
+  _zsh_update_p10k
   _zsh_link_zshrc
 
   # Only manage upgrades for source builds we own; system zsh belongs to the OS
@@ -253,6 +302,14 @@ module_status() {
       info "Plugins: $(_zsh_plugins)"
     else
       warn "oh-my-zsh: not installed"
+    fi
+
+    local p10k_dir
+    p10k_dir="$(_zsh_p10k_dir)"
+    if [[ -d "${p10k_dir}/.git" ]]; then
+      info "powerlevel10k: $(git -C "$p10k_dir" rev-parse --short HEAD 2>/dev/null) (${p10k_dir})"
+    else
+      warn "powerlevel10k: not installed (run 'dot install zsh')"
     fi
 
     if [[ -L "${HOME}/.zshrc" ]]; then
