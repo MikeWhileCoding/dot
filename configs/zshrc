@@ -19,11 +19,11 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 
 # Plugins (dot installs oh-my-zsh itself into $ZSH):
 #   git    — branch/status aliases: gst, gco, gp, gd, glog, gcm, …
-#   github — gh/hub completion plus GitHub helper functions
+#   gh     — completion for the GitHub CLI (gh)
 #   docker — docker CLI completion and container/image shortcuts
 plugins=(
   git
-  github
+  gh
   docker
   docker-compose
 )
