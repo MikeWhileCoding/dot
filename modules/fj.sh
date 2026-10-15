@@ -60,12 +60,39 @@ _fj_install() {
   success "fj ${version} installed to ${DOT_BIN}/fj"
 }
 
+_fj_default_host="https://git.silentcorner.eu"
+_fj_rc="${HOME}/.zshrc.local"
+
+# fj picks the host from the repo's git remote; outside a repo it falls back to
+# FJ_FALLBACK_HOST. ~/.zshrc is the tracked configs/zshrc, so this goes into the
+# machine-local rc it sources.
+_fj_setup_host() {
+  local current host=""
+  current="$(sed -n 's/^export FJ_FALLBACK_HOST="\(.*\)"$/\1/p' "$_fj_rc" 2>/dev/null)" || true
+  if [[ -t 0 ]]; then
+    printf "%s[?]%s     Forgejo server [%s]: " "$_c_yellow" "$_c_reset" "${current:-$_fj_default_host}"
+    read -r host || host=""
+  fi
+  host="${host:-${current:-$_fj_default_host}}"
+  [[ "$host" == http*://* ]] || host="https://${host}"
+
+  touch "$_fj_rc"
+  sed -i.bak '/^export FJ_FALLBACK_HOST=/d; /^# fj default Forgejo server$/d' "$_fj_rc" && rm -f "${_fj_rc}.bak"
+  printf '# fj default Forgejo server\nexport FJ_FALLBACK_HOST="%s"\n' "$host" >> "$_fj_rc"
+  success "fj fallback host set to ${host} in ${_fj_rc} (log in with 'fj -H ${host} auth login')"
+}
+
+module_config() {
+  _fj_setup_host
+}
+
 module_install() {
   if [[ -x "${DOT_BIN}/fj" ]]; then
     warn "fj is already installed (use 'dot update fj' to update)"
-    return 0
+  else
+    _fj_install || return 1
   fi
-  _fj_install
+  _fj_setup_host
 }
 
 module_update() {
@@ -93,5 +120,13 @@ module_status() {
     warn "fj found at $(command -v fj) but is not managed by dot"
   else
     warn "fj is not installed"
+  fi
+
+  local host
+  host="$(sed -n 's/^export FJ_FALLBACK_HOST="\(.*\)"$/\1/p' "$_fj_rc" 2>/dev/null)" || true
+  if [[ -n "$host" ]]; then
+    info "Fallback host: ${host}"
+  else
+    warn "Fallback host: not set (run 'dot config fj')"
   fi
 }
