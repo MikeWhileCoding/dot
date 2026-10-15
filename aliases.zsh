@@ -1,1 +1,1 @@
-/Users/mike/.config/dot/configs/aliases.zsh
+/home/mike/.config/dot/configs/aliases.zsh
