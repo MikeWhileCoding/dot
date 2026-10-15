@@ -9,7 +9,9 @@ _aliases_setup() {
   local target="${HOME}/.config/dot/aliases.zsh"
 
   mkdir -p "${HOME}/.config/dot"
-  ln -sf "$src" "$target"
+  # Relative when the target dir is the repo itself (the link is then tracked
+  # and must work on every machine); absolute otherwise.
+  ln -sfn "${src#${target:h}/}" "$target"
 
   local source_line='[[ -f "${HOME}/.config/dot/aliases.zsh" ]] && source "${HOME}/.config/dot/aliases.zsh"'
   rc_append_once "${HOME}/.zshrc" 'dot/aliases.zsh' 'dot aliases' "$source_line"
