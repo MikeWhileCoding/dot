@@ -4,10 +4,13 @@
 # Laravel Sail — run from any project directory
 alias sail='sh $([ -f sail ] && echo sail || echo vendor/bin/sail)'
 
-# devsetup — create a tmux session with lazygit, nvim, claude, and 2 terminals
+# devsetup — create a tmux session with lazygit, nvim, claude, and 2 terminals.
+# The session is named after the project (git root, else the given folder);
+# tmux shows that name as the terminal title.
 devsetup() {
   local dir="${1:-.}"
-  local session="dev-$(basename "$dir")"
+  dir="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null || echo "${dir:A}")"
+  local session="${${dir:t}//[.:]/_}"  # tmux forbids . and : in session names
 
   # Reuse existing session if it exists
   if tmux has-session -t "$session" 2>/dev/null; then
@@ -27,3 +30,21 @@ devsetup() {
   # Attach to the session
   tmux attach-session -t "$session"
 }
+
+# oddn — `docker compose down` every running orderdesk project
+# (~/coding/orderdesk and ~/coding/projecten-orderdesk/*), found via compose labels.
+oddn() {
+  local project dir
+  docker ps --format '{{.Label "com.docker.compose.project"}} {{.Label "com.docker.compose.project.working_dir"}}' \
+    | sort -u \
+    | while read -r project dir; do
+        [[ "$dir" == "$HOME/coding/orderdesk" || "$dir" == "$HOME/coding/projecten-orderdesk/"* ]] || continue
+        echo "==> $project ($dir)"
+        docker compose -p "$project" down
+      done
+}
+
+# lazydb — vague theme outside Neovim (lazydb.nvim already follows the
+# colorscheme). Regenerate configs/lazydb/vague.json from Neovim with
+# `require("lazydb.theme").resolve()` if the palette changes.
+alias lazydb="lazydb --theme-file ${${(%):-%x}:A:h}/lazydb/vague.json"

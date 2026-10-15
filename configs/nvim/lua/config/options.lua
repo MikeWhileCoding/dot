@@ -29,6 +29,8 @@ opt.colorcolumn   = "120"
 opt.splitright    = true
 opt.splitbelow    = true
 opt.showmode      = false  -- shown by lualine
+opt.title         = true   -- terminal title = folder nvim was opened in
+opt.titlestring   = "%{fnamemodify(getcwd(), ':t')}"
 
 -- Files
 opt.undofile  = true
