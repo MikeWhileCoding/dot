@@ -19,6 +19,8 @@ PROFILE_MODULES=(
   uv
   posting
   claude
+  lazydb
+  umami
   # starship
   # zoxide
 )
