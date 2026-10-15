@@ -13,6 +13,7 @@ PROFILE_MODULES=(
   ripgrep
   delta
   gh
+  fj
   lazygit
   nvm
   intelephense
