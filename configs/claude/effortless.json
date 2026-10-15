@@ -1,0 +1,32 @@
+{
+  "enabledPlugins": {
+    "effortless@effortless": true
+  },
+  "extraKnownMarketplaces": {
+    "effortless": {
+      "source": {
+        "source": "github",
+        "repo": "HeyCubit/effortless"
+      }
+    }
+  },
+  "pluginConfigs": {
+    "effortless@effortless": {
+      "options": {
+        "judge": "jev",
+        "handoffAfter": "continue",
+        "effortBias": "-1",
+        "effortFloor": "low",
+        "effortCeiling": "max",
+        "modelAuto": "off",
+        "helpers": "off",
+        "handoffButton": "advised",
+        "compactWith": "haiku",
+        "swampAt": "70",
+        "appearance": "auto",
+        "theme": "orange",
+        "layout": "minimal"
+      }
+    }
+  }
+}

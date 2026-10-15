@@ -47,12 +47,22 @@ _claude_configure_statusline() {
   local settings_file="${settings_dir}/settings.json"
   mkdir -p "$settings_dir"
 
-  if [[ -f "$settings_file" ]]; then
-    python3 - "$settings_file" <<'EOF'
+  [[ -f "$settings_file" ]] || echo '{}' > "$settings_file"
+  python3 - "$settings_file" "${DOT_REPO}/configs/claude/effortless.json" <<'EOF'
 import json, sys
-path = sys.argv[1]
+path, fragment = sys.argv[1], sys.argv[2]
 with open(path) as f:
     cfg = json.load(f)
+
+def merge(dst, src):
+    for k, v in src.items():
+        if isinstance(v, dict) and isinstance(dst.get(k), dict):
+            merge(dst[k], v)
+        else:
+            dst[k] = v
+
+with open(fragment) as f:
+    merge(cfg, json.load(f))
 cfg['statusLine'] = {
     "type": "command",
     "command": "npx -y @owloops/claude-powerline@latest --style=powerline"
@@ -61,18 +71,8 @@ with open(path, 'w') as f:
     json.dump(cfg, f, indent=2)
     f.write('\n')
 EOF
-  else
-    cat > "$settings_file" <<'EOF'
-{
-  "statusLine": {
-    "type": "command",
-    "command": "npx -y @owloops/claude-powerline@latest --style=powerline"
-  }
-}
-EOF
-  fi
 
-  success "Claude Code statusLine configured (claude-powerline)"
+  success "Claude Code settings configured (claude-powerline, effortless)"
 }
 
 _claude_install_from_npm() {
