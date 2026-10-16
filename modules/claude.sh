@@ -42,7 +42,29 @@ _claude_require_npm() {
   fi
 }
 
-_claude_configure_statusline() {
+# Listing effortless in enabledPlugins/extraKnownMarketplaces doesn't fetch it,
+# so add the marketplace and install the plugin through the CLI as well.
+_claude_install_effortless() {
+  local claude="${DOT_BIN}/claude"
+  if "$claude" plugin list --json 2>/dev/null | grep -q '"effortless@effortless"'; then
+    return 0
+  fi
+
+  if ! "$claude" plugin marketplace list --json 2>/dev/null | grep -q '"name": *"effortless"'; then
+    info "Adding effortless marketplace..."
+    "$claude" plugin marketplace add HeyCubit/effortless || {
+      warn "Could not add the effortless marketplace"
+      return 0
+    }
+  fi
+
+  info "Installing effortless plugin..."
+  "$claude" plugin install effortless@effortless || warn "Could not install the effortless plugin"
+}
+
+_claude_configure() {
+  _claude_install_effortless
+
   local settings_dir="${HOME}/.claude"
   local settings_file="${settings_dir}/settings.json"
   mkdir -p "$settings_dir"
@@ -87,7 +109,7 @@ _claude_install_from_npm() {
   info "Running claude install (switching to the native build)..."
   "${DOT_BIN}/claude" install || { error "claude install failed"; return 1; }
 
-  _claude_configure_statusline
+  _claude_configure
 
   local version
   version="$(_claude_local_version)"
@@ -105,9 +127,14 @@ _claude_update_native() {
   success "claude ${version} is installed"
 }
 
+module_config() {
+  _claude_configure
+}
+
 module_install() {
   if [[ -x "${DOT_BIN}/claude" ]]; then
     warn "claude is already installed (use 'dot update claude' to update)"
+    _claude_configure
     return 0
   fi
   _claude_install_from_npm
@@ -133,7 +160,7 @@ module_update() {
     [[ -n "$remote_version" ]] && info "Update available for claude: ${local_version} -> ${remote_version}"
     _claude_install_from_npm || return 1
   fi
-  _claude_configure_statusline
+  _claude_configure
 }
 
 module_status() {
@@ -150,7 +177,13 @@ module_status() {
     if [[ -f "$settings" ]] && grep -q 'claude-powerline' "$settings" 2>/dev/null; then
       info "statusLine: claude-powerline (configured)"
     else
-      warn "statusLine: not configured (run 'dot install claude' to fix)"
+      warn "statusLine: not configured (run 'dot config claude' to fix)"
+    fi
+
+    if "${DOT_BIN}/claude" plugin list --json 2>/dev/null | grep -q '"effortless@effortless"'; then
+      info "effortless: installed"
+    else
+      warn "effortless: not installed (run 'dot config claude' to fix)"
     fi
   else
     warn "claude is not installed"

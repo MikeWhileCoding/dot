@@ -1,6 +1,4 @@
 gui:
-  authorColors:
-    "*": "#f3be7c"
   theme:
     activeBorderColor:
       - "#aeaed1"
@@ -23,7 +21,8 @@ gui:
       - "#d8647e"
     defaultFgColor:
       - "#cdcdcd"
-
+    authorColors:
+      "*": "#f3be7c"
 # Pre-commit hooks (biome / lint-staged / pre-commit) run as part of the commit,
 # and lazygit's commit popup shows only a truncated tail of what they printed.
 # lazygit has no "on failure" hook, so instead these run the commit in the real
@@ -43,7 +42,6 @@ customCommands:
         "${SHELL:-sh}"
       }
     output: terminal
-
   # Run the hook without writing a commit message first.
   # `git hook run` honours core.hooksPath, so husky projects work too.
   - key: "#"
@@ -51,7 +49,6 @@ customCommands:
     description: "Run the pre-commit hook now"
     command: "git hook run pre-commit"
     output: terminal
-
   - key: "!"
     context: "global"
     description: "Open a shell in the repo root"
