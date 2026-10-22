@@ -70,9 +70,9 @@ _claude_configure() {
   mkdir -p "$settings_dir"
 
   [[ -f "$settings_file" ]] || echo '{}' > "$settings_file"
-  python3 - "$settings_file" "${DOT_REPO}/configs/claude/effortless.json" <<'EOF'
+  python3 - "$settings_file" "${DOT_REPO}"/configs/claude/*.json <<'EOF'
 import json, sys
-path, fragment = sys.argv[1], sys.argv[2]
+path, fragments = sys.argv[1], sys.argv[2:]
 with open(path) as f:
     cfg = json.load(f)
 
@@ -83,8 +83,9 @@ def merge(dst, src):
         else:
             dst[k] = v
 
-with open(fragment) as f:
-    merge(cfg, json.load(f))
+for fragment in fragments:
+    with open(fragment) as f:
+        merge(cfg, json.load(f))
 cfg['statusLine'] = {
     "type": "command",
     "command": "npx -y @owloops/claude-powerline@latest --style=powerline"
@@ -94,7 +95,7 @@ with open(path, 'w') as f:
     f.write('\n')
 EOF
 
-  success "Claude Code settings configured (claude-powerline, effortless)"
+  success "Claude Code settings configured (claude-powerline, configs/claude/*.json)"
 }
 
 _claude_install_from_npm() {
